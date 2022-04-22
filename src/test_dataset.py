@@ -65,4 +65,3 @@ fig.update_layout(
 )
 fig.update_yaxes(title_text="<b>Average Hospital Death")
 fig.show()
-
