@@ -1,6 +1,8 @@
 from collections import OrderedDict
 from functools import partial
 from time import time
+import math
+from itertools import combinations
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,10 +48,13 @@ nb_points = 2000
 X = data[:nb_points]
 Death = X["hospital_death"]
 n_neighbors = 10
-n_components = 2
+n_components = 3
+list_comb = list(range(n_components))
+list_comb = list(combinations(list_comb, 2))
+n_pairs = len(list_comb)
 
 # Create figure
-fig = plt.figure(figsize=(15, 8))
+fig, axs = plt.subplots(n_pairs, 2, constrained_layout=True, squeeze=False)
 fig.suptitle(
     "Manifold Learning with %i points, %i neighbors" % (nb_points, n_neighbors), fontsize=14
 )
@@ -67,18 +72,21 @@ methods["LLE"] = LLE(method="standard")
 methods["Hessian LLE"] = LLE(method="hessian")
 
 # Plot results
-for i, (label, method) in enumerate(methods.items()):
+for m, (label, method) in enumerate(methods.items()):
     t0 = time()
     Y = method.fit_transform(X)
     t1 = time()
     print("%s: %.2g sec" % (label, t1 - t0))
-    ax = fig.add_subplot(1, 2, 1 + i)
-    ax.scatter(Y[Death == 0, 0], Y[Death == 0, 1], c="green", label="Survived")
-    ax.scatter(Y[Death == 1, 0], Y[Death == 1, 1], c="red", label="Died")
-    ax.set_title("%s (%.2g sec)" % (label, t1 - t0))
-    ax.xaxis.set_major_formatter(NullFormatter())
-    ax.yaxis.set_major_formatter(NullFormatter())
-    ax.axis("tight")
-    ax.legend()
+    for (l, x) in enumerate(list_comb):
+        axs[l, m].scatter(Y[Death == 0, x[0]], Y[Death == 0, x[1]], c="green", label="Survived")
+        axs[l, m].scatter(Y[Death == 1, x[0]], Y[Death == 1, x[1]], c="red", label="Died")
+        axs[l, m].set_title("%s (%.2g sec)" % (label, t1 - t0))
+        axs[l, m].xaxis.set_major_formatter(NullFormatter())
+        axs[l, m].yaxis.set_major_formatter(NullFormatter())
+        axs[l, m].axis("tight")
+        axs[l, m].legend()
+        axs[l, m].set_xlabel(f"dim : {x[0]}")
+        axs[l, m].set_ylabel(f"dim : {x[1]}")
 
 plt.show()
+fig.savefig("fig.png")
