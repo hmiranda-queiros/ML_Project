@@ -47,17 +47,18 @@ print("No. of rows with missing values:", data.isnull().any(axis=1).sum())
 nb_points = 2000
 X = data[:nb_points]
 Death = X["hospital_death"]
-n_neighbors = 10
-n_components = 3
+n_neighbors = 15
+n_components = 4
 list_comb = list(range(n_components))
 list_comb = list(combinations(list_comb, 2))
 n_pairs = len(list_comb)
 
 # Create figure
-fig, axs = plt.subplots(n_pairs, 2, constrained_layout=True, squeeze=False)
+fig, axs = plt.subplots(n_pairs, 2, squeeze=False, figsize=(35, 18))
 fig.suptitle(
     "Manifold Learning with %i points, %i neighbors" % (nb_points, n_neighbors), fontsize=14
 )
+# fig.tight_layout()
 
 # Set-up manifold methods
 LLE = partial(
@@ -80,7 +81,8 @@ for m, (label, method) in enumerate(methods.items()):
     for (l, x) in enumerate(list_comb):
         axs[l, m].scatter(Y[Death == 0, x[0]], Y[Death == 0, x[1]], c="green", label="Survived")
         axs[l, m].scatter(Y[Death == 1, x[0]], Y[Death == 1, x[1]], c="red", label="Died")
-        axs[l, m].set_title("%s (%.2g sec)" % (label, t1 - t0))
+        if l == 0:
+            axs[l, m].set_title("%s (%.2g sec)" % (label, t1 - t0))
         axs[l, m].xaxis.set_major_formatter(NullFormatter())
         axs[l, m].yaxis.set_major_formatter(NullFormatter())
         axs[l, m].axis("tight")
