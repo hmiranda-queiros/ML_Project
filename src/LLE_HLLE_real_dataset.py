@@ -44,11 +44,26 @@ print("No. of rows with missing values:", data.isnull().any(axis=1).sum())
 
 ################################### Reduction part ##################################
 
-nb_points = 2000
-X = data[:nb_points]
-Death = X["hospital_death"]
+n_points = 2000
 n_neighbors = 15
 n_components = 4
+
+total_death = data["hospital_death"]
+n_death = len(total_death[total_death == 1])
+n_survived = len(total_death) - n_death
+death_proportion = n_death / len(total_death)
+data_dead = data.loc[(data["hospital_death"] == 1)]
+data_survived = data.loc[(data["hospital_death"] == 0)]
+
+X = data_dead.sample(int(n_points * death_proportion))
+Y = data_survived.sample(n_points - int(n_points * death_proportion))
+sampled_data = pd.concat([X, Y])
+Death = sampled_data["hospital_death"]
+print(X.info(verbose=True, show_counts=True))
+print(Y.info(verbose=True, show_counts=True))
+print(sampled_data.info(verbose=True, show_counts=True))
+print(death_proportion)
+
 list_comb = list(range(n_components))
 list_comb = list(combinations(list_comb, 2))
 n_pairs = len(list_comb)
@@ -56,9 +71,8 @@ n_pairs = len(list_comb)
 # Create figure
 fig, axs = plt.subplots(n_pairs, 2, squeeze=False, figsize=(35, 18))
 fig.suptitle(
-    "Manifold Learning with %i points, %i neighbors" % (nb_points, n_neighbors), fontsize=14
+    "Manifold Learning with %i points, %i neighbors" % (n_points, n_neighbors), fontsize=14
 )
-# fig.tight_layout()
 
 # Set-up manifold methods
 LLE = partial(
@@ -75,7 +89,7 @@ methods["Hessian LLE"] = LLE(method="hessian")
 # Plot results
 for m, (label, method) in enumerate(methods.items()):
     t0 = time()
-    Y = method.fit_transform(X)
+    Y = method.fit_transform(sampled_data)
     t1 = time()
     print("%s: %.2g sec" % (label, t1 - t0))
     for (l, x) in enumerate(list_comb):
