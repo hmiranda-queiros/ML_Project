@@ -171,7 +171,7 @@ for (columnName, columnData) in data.iteritems():
 # print(data.info(verbose=True, show_counts=True))
 
 # # extract a random sample of data (take care of balancing)
-data = data.sample(frac=1).reset_index(drop=True)   # shuffle
+# data = data.sample(frac=1).reset_index(drop=True)   # shuffle
 nb_patients = len(data['hospital_death'])
 nb_survived = len(data[data['hospital_death'] == 0])
 nb_died = len(data[data['hospital_death'] == 1])
@@ -179,9 +179,9 @@ nb_died = len(data[data['hospital_death'] == 1])
 death_proportion = nb_died / nb_patients
 data_survived = data.loc[(data["hospital_death"] == 0)]
 data_dead = data.loc[(data["hospital_death"] == 1)]
-nb_samples = 7000
-part1 = data_dead.sample(int(nb_samples * death_proportion))
-part2 = data_survived.sample(nb_samples - int(nb_samples * death_proportion))
+nb_samples = 10000
+part1 = data_dead.sample(int(nb_samples * death_proportion), random_state=42)
+part2 = data_survived.sample(nb_samples - int(nb_samples * death_proportion), random_state=42)
 data_sampled = pd.concat([part1, part2])
 
 # --- deriving training and testing sets and normalizing (scaling them) --- #
@@ -201,31 +201,43 @@ LLE = partial(manifold.LocallyLinearEmbedding,
 nb_neighbors = 20
 nb_components = 15
 methods = OrderedDict()
-methods['PCA'] = PCA(n_components=40)
+methods['RAW'] = None
+nb_components_pca = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
+for i in nb_components_pca:
+     pca = PCA(n_components=i)
+     X_train_pca = pca.fit_transform(X_train)
+     print('Total Explained Variance Ratio using {} components = {}%'.format(i, round(np.sum(pca.explained_variance_ratio_)*100, 2)))
+methods['PCA'] = PCA(n_components=50)
 methods['LLE'] = LLE(n_neighbors=nb_neighbors, n_components=nb_components, method="standard")
 methods['MLLE'] = LLE(n_neighbors=nb_neighbors, n_components=nb_components, method="modified")
 elapsed_dr = OrderedDict()
 X_train_dict = OrderedDict()
 X_test_dict = OrderedDict()
-labels_dr = ['PCA', 'LLE', 'MLLE']
+labels_dr = ['RAW', 'PCA', 'LLE', 'MLLE']
 for label in labels_dr:
+    if label == 'RAW':
+        X_train_dict[label] = X_train
+        X_test_dict[label] = X_test
+        elapsed_dr['RAW'] = 0
+        continue
     start_time = time.time()
     X_train_dict[label] = methods[label].fit_transform(X_train)
     X_test_dict[label] = methods[label].transform(X_test)
     elapsed_time = time.time() - start_time
     elapsed_dr[label] = elapsed_time
-    print(label + ' finished in ' + str(elapsed_time) + ' s!')
+    print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 # # set-up lle vs mlle figure
 list_comb = list(range(nb_components))
 list_comb = list(combinations(list_comb, 2))
-nb_pairs = len(list_comb)
+nb_pairs = min(len(list_comb), 5)
+list_comb = list_comb[:nb_pairs]
 fig, axs = plt.subplots(nb_pairs, 2, squeeze=False, figsize=(35, 18))
 fig.suptitle('Manifold Learning with %i neighbors and %i embeddings' % (nb_neighbors, nb_components), fontsize=14)
 for m, label in enumerate(labels_dr):
-    if label == 'PCA':
+    if label == 'PCA' or label == 'RAW':
         continue
     train = X_train_dict[label]
-    n = m - 1
+    n = m - 2
     for (l, x) in enumerate(list_comb):
         axs[l, n].scatter(train[y_train == 0, x[0]],
                           train[y_train == 0, x[1]], c='green', label='Survived')
@@ -259,26 +271,26 @@ states = []
 # # main loop
 for label_clf in labels_clf:
     for label_dr in labels_dr:
-        states.append(label_clf+':'+label_dr)
+        states.append(label_clf+':'+label_dr+':'+f'{elapsed_time:.2f}')
         start_time = time.time()
         classifiers[label_clf].fit(X_train_dict[label_dr], y_train)
         predictions = classifiers[label_clf].predict(X_test_dict[label_dr])
         elapsed_time = time.time() - start_time
         elapsed_tot.append(elapsed_time)
-        precision_scores.append(metrics.precision_score(y_test, predictions))
-        recall_scores.append(metrics.recall_score(y_test, predictions))
-        f1_scores.append(metrics.f1_score(y_test, predictions))
+        precision_scores.append(metrics.precision_score(y_test, predictions, average='weighted'))
+        recall_scores.append(metrics.recall_score(y_test, predictions, average='weighted'))
+        f1_scores.append(metrics.f1_score(y_test, predictions, average='weighted'))
         accuracy_scores.append(metrics.accuracy_score(y_test, predictions))
-        cms.append(metrics.confusion_matrix(y_test, predictions))
+        cms.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
         rocs.append(metrics.roc_curve(y_test, predictions))
-        print(label_clf + ':' + label_dr + ' finished in ' + str(elapsed_time) + ' s!')
+        print(label_clf + ':' + label_dr + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 result = {'states': states, 'precision_scores': precision_scores, 'recall_scores': recall_scores,
           'f1_scores': f1_scores, 'accuracy_scores': accuracy_scores, 'time': elapsed_tot, 'cms': cms, 'rocs': rocs}
 result_df = pd.DataFrame(data=result)
 result_df.to_csv('./results.csv')
 # # set-up figures
-result_df_reduced = result_df[['precision_scores', 'recall_scores', 'f1_scores', 'accuracy_scores', 'time']]
-ax = result_df.plot(kind='bar', figsize=(40, 20))
+result_df_reduced = result_df[['precision_scores', 'recall_scores', 'f1_scores', 'accuracy_scores']]
+ax = result_df_reduced.plot(kind='bar', figsize=(40, 20))
 ax.set_xticklabels(states, rotation=45)
 plt.savefig('results.png')
 fig, axs = plt.subplots(len(labels_clf), len(labels_dr), squeeze=False, figsize=(40, 20))
