@@ -243,7 +243,8 @@ X_train_kpca = kpca.fit_transform(X_train_smp)
 X_test_kpca = kpca.transform(X_test)
 
 # # lle and mlle
-nb = np.arange(nb_components_kpca-3, nb_components_kpca+4, 1)
+nb = np.arange(nb_components_kpca-5, nb_components_kpca+10, 1)
+# nb = np.arange(15, 25, 1)
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
 elapsed_dr_mlle = OrderedDict()
@@ -259,10 +260,10 @@ for i in range(len(nb)):
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='dense',
               neighbors_algorithm='auto',
-              n_neighbors=20,
+              n_neighbors=13,
               random_state=617)
 for i in range(len(nb)):
-    methods[labels_dr_lle[i]] = LLE(n_components=nb[i], method="standard")
+    methods[labels_dr_lle[i]] = LLE(n_neighbors=nb[i], method="standard")
     start_time = time.time()
     X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train_smp)
     X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
@@ -270,7 +271,7 @@ for i in range(len(nb)):
     elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
     print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 for i in range(len(nb)):
-    methods[labels_dr_mlle[i]] = LLE(n_components=nb[i], method="modified")
+    methods[labels_dr_mlle[i]] = LLE(n_neighbors=nb[i], method="modified")
     start_time = time.time()
     X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train_smp)
     X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
@@ -281,9 +282,9 @@ for i in range(len(nb)):
 # --- classification --- #
 # # classifier = SVC(C=1.0, kernel='rbf', gamma='scale', probability=False, class_weight='balanced')
 # # classifier = GaussianProcessClassifier()
-classifier = LogisticRegression(penalty='l2', dual=False, C=1.0, fit_intercept=True, random_state=617, max_iter=2000)
 # # classifier = GaussianNB()
-# # classifier = LinearSVC(class_weight='balanced', random_state=42)
+classifier = LogisticRegression(penalty='l2', dual=False, C=1.0, fit_intercept=True, random_state=617, max_iter=2000)
+# classifier = LinearSVC(C=1.0, random_state=617)
 # # raw
 start_time = time.time()
 classifier.fit(X_train_smp, y_train_smp)
@@ -372,3 +373,4 @@ for i in range(len(nb)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig('./plots/cfm.png')
+
