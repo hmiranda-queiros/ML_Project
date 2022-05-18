@@ -63,7 +63,7 @@ nb_died_spl = len(y_train[y_train == 1])
 death_proportion_spl = nb_died_spl / nb_patients_spl
 print(f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 # # sampling
-over = SMOTE(sampling_strategy=death_proportion_spl*1.1, random_state=617)
+over = SMOTE(sampling_strategy=death_proportion_spl*1.5, random_state=617)
 under = RandomUnderSampler(sampling_strategy=0.8, random_state=617)
 steps = [('o', over), ('u', under)]
 pipeline = Pipeline(steps=steps)
@@ -84,8 +84,8 @@ elapsed_dict = OrderedDict(); elapsed_dict['RAW'] = 0
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='dense',
               neighbors_algorithm='auto',
-              n_neighbors=21,
-              n_components=13,
+              n_neighbors=28, # 21, 13
+              n_components=25,
               random_state=617)
 methods['LLE'] = LLE(method="standard")
 start_time = time.time()
