@@ -77,7 +77,7 @@ print(f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl
 
 
 # --- dimensionality reduction --- #
-nb = np.arange(7, 13, 1)
+nb = np.arange(7, 16, 1)
 # nb = np.arange(15, 25, 1)
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
