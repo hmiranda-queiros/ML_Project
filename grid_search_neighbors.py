@@ -51,7 +51,7 @@ print(
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
 # data_survived = data_survived.sample(nb_died_org, random_state=617)
-nb_sample = 500
+nb_sample = nb_died_org // 2
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
@@ -79,8 +79,9 @@ print(
     f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 
 # --- dimensionality reduction --- #
-nb = np.arange(7, 16, 1)
-# nb = np.arange(15, 25, 1)
+nb_lle = np.arange(1, 51, 1)
+nb_mlle = np.arange(21, 72, 1)
+
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
 elapsed_dr_mlle = OrderedDict()
@@ -90,23 +91,24 @@ X_train_dict_mlle = OrderedDict()
 X_test_dict_mlle = OrderedDict()
 labels_dr_lle = []
 labels_dr_mlle = []
-for i in range(len(nb)):
-    labels_dr_lle.append('LLE:cmp:' + str(nb[i]) + ";ngh:10")
-    labels_dr_mlle.append('MLLE:cmp:' + str(nb[i]) + ";ngh:" + str(nb[i] + 2))
+for i in range(len(nb_lle)):
+    labels_dr_lle.append('LLE:cmp:' + str(14) + ";ngh:" + str(nb_lle[i]))
+for i in range(len(nb_mlle)):
+    labels_dr_mlle.append('MLLE:cmp:' + str(21) + ";ngh:" + str(nb_mlle[i]))
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
-for i in range(len(nb)):
-    methods[labels_dr_lle[i]] = LLE(n_components=nb[i], n_neighbors=10, method="standard")
+for i in range(len(nb_lle)):
+    methods[labels_dr_lle[i]] = LLE(n_components=14, n_neighbors=nb_lle[i], method="standard")
     start_time = time.time()
     X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train)
     X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
     elapsed_time = time.time() - start_time
     elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
     print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-for i in range(len(nb)):
-    methods[labels_dr_mlle[i]] = LLE(n_components=nb[i], n_neighbors=nb[i] + 2, method="modified")
+for i in range(len(nb_mlle)):
+    methods[labels_dr_mlle[i]] = LLE(n_components=21, n_neighbors=nb_mlle[i], method="modified")
     start_time = time.time()
     X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train)
     X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
@@ -161,6 +163,7 @@ for label in labels_dr_mlle:
     accuracy_scores_mlle.append(metrics.accuracy_score(y_test, predictions))
     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+
 # # plots
 x_lle = list(range(len(labels_dr_lle)))
 y_lle = f1_scores_lle
@@ -186,7 +189,7 @@ ax[1].grid()
 ax[1].legend(['mlle', 'raw'], fontsize=20)
 ax[1].set_title('F1-score MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
-fig.savefig('./plots/f1.png')
+fig.savefig(f'./plots/f1_{nb_sample * 2}_samples.png')
 
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, z_lle, 'o-')
@@ -205,18 +208,18 @@ ax[1].grid()
 ax[1].legend(['mlle', 'raw'], fontsize=20)
 ax[1].set_title('Accur MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
-fig.savefig('./plots/accur.png')
+fig.savefig(f'./plots/accur_{nb_sample * 2}_samples.png')
 
-fig, ax = plt.subplots(3, len(nb), figsize=(120, 30))
+fig, ax = plt.subplots(3, max(len(nb_lle), len(nb_mlle)), figsize=(120, 30))
 sns.heatmap(cfm_raw, annot=True, ax=ax[0, 0])
 ax[0, 0].set_title(states_raw, fontsize=20)
-for i in range(len(nb)):
+for i in range(len(nb_lle)):
     sns.heatmap(cfm_lle[i], annot=True, ax=ax[1, i])
     ax[1, i].set_title(states_lle[i], fontsize=20)
-for i in range(len(nb)):
+for i in range(len(nb_mlle)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
-fig.savefig('./plots/cfm.png')
+fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
 
 #
 # methods = OrderedDict(); methods['RAW'] = []
