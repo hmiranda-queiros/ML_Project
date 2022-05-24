@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict
 from functools import partial
 import pandas as pd
-import seaborn as sns       # sns.set()
+import seaborn as sns  # sns.set()
 import numpy as np
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
@@ -16,7 +16,6 @@ from sklearn import manifold
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
-
 
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
@@ -37,7 +36,7 @@ data = data[data.isna().sum(axis=1) == 0]
 # # Converting categorical values to numerical ones
 for item in ['ethnicity', 'gender']:
     data[item] = data[item].astype('category')
-    data[item+'_num'] = data[item].cat.codes
+    data[item + '_num'] = data[item].cat.codes
     data.drop(item, axis=1, inplace=True)
 data.to_csv('./data/data_pp.csv', index=False)
 print(f'Original: #data = {data.shape[0]}, #features = {data.shape[1]}')
@@ -45,13 +44,16 @@ nb_patients_org = len(data['hospital_death'])
 nb_survived_org = len(data[data['hospital_death'] == 0])
 nb_died_org = len(data[data['hospital_death'] == 1])
 death_proportion_org = nb_died_org / nb_patients_org
-print(f'Original: #patients = {nb_patients_org}, #survived = {nb_survived_org}, #died = {nb_died_org}, proportion = {death_proportion_org:.3f}')
-
+print(
+    f'Original: #patients = {nb_patients_org}, #survived = {nb_survived_org}, #died = {nb_died_org}, proportion = {death_proportion_org:.3f}')
 
 # --- sampling --- #
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
-data_survived = data_survived.sample(nb_died_org, random_state=617)
+# data_survived = data_survived.sample(nb_died_org, random_state=617)
+nb_sample = 500
+data_died = data_died.sample(nb_sample, random_state=617)
+data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
 # data_sp.to_csv('./data/data_sp.csv', index=False)
 print(f'Sampled: #data = {data_sp.shape[0]}, #features = {data_sp.shape[1]}')
@@ -73,8 +75,8 @@ nb_patients_spl = len(y_train)
 nb_survived_spl = len(y_train[y_train == 0])
 nb_died_spl = len(y_train[y_train == 1])
 death_proportion_spl = nb_died_spl / nb_patients_spl
-print(f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
-
+print(
+    f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 
 # --- dimensionality reduction --- #
 nb = np.arange(7, 16, 1)
@@ -89,15 +91,14 @@ X_test_dict_mlle = OrderedDict()
 labels_dr_lle = []
 labels_dr_mlle = []
 for i in range(len(nb)):
-    labels_dr_lle.append('LLE:' + str(nb[i]))
-    labels_dr_mlle.append('MLLE:' + str(nb[i]))
+    labels_dr_lle.append('LLE:cmp:' + str(nb[i]) + ";ngh:10")
+    labels_dr_mlle.append('MLLE:cmp:' + str(nb[i]) + ";ngh:" + str(nb[i] + 2))
 LLE = partial(manifold.LocallyLinearEmbedding,
-              eigen_solver='dense',
+              eigen_solver='auto',
               neighbors_algorithm='auto',
-              n_neighbors=18,
               random_state=617)
 for i in range(len(nb)):
-    methods[labels_dr_lle[i]] = LLE(n_components=nb[i], method="standard")
+    methods[labels_dr_lle[i]] = LLE(n_components=nb[i], n_neighbors=10, method="standard")
     start_time = time.time()
     X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train)
     X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
@@ -105,14 +106,13 @@ for i in range(len(nb)):
     elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
     print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 for i in range(len(nb)):
-    methods[labels_dr_mlle[i]] = LLE(n_components=nb[i], method="modified")
+    methods[labels_dr_mlle[i]] = LLE(n_components=nb[i], n_neighbors=nb[i] + 2, method="modified")
     start_time = time.time()
     X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train)
     X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
     elapsed_time = time.time() - start_time
     elapsed_dr_mlle[labels_dr_mlle[i]] = elapsed_time
     print(labels_dr_mlle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-
 
 # --- classification --- #
 classifier = SVC(C=1.0, kernel='rbf', gamma='scale', coef0=0)
@@ -122,33 +122,41 @@ start_time = time.time()
 classifier.fit(X_train, y_train)
 predictions = classifier.predict(X_test)
 elapsed_time_raw = time.time() - start_time
-states_raw = 'RAW:' + f'{elapsed_time_raw:.2f}'
+states_raw = 'RAW:t:' + f'{elapsed_time_raw:.2f}'
 f1_scores_raw = metrics.f1_score(y_test, predictions)
 accuracy_scores_raw = metrics.accuracy_score(y_test, predictions)
 cfm_raw = metrics.confusion_matrix(y_test, predictions, normalize='true')
 print('RAW finished in ' + f'{elapsed_time_raw:.2f}' + ' s!')
 # # lle
-elapsed_tot_lle = []; f1_scores_lle = []; accuracy_scores_lle = []; cfm_lle = []; states_lle = []
+elapsed_tot_lle = []
+f1_scores_lle = []
+accuracy_scores_lle = []
+cfm_lle = []
+states_lle = []
 for label in labels_dr_lle:
     start_time = time.time()
     classifier.fit(X_train_dict_lle[label], y_train)
     predictions = classifier.predict(X_test_dict_lle[label])
     elapsed_time = time.time() - start_time
-    elapsed_tot_lle.append(elapsed_time+elapsed_dr_lle[label])
-    states_lle.append(label + ':' + f'{elapsed_tot_lle[-1]:.2f}')
+    elapsed_tot_lle.append(elapsed_time + elapsed_dr_lle[label])
+    states_lle.append(label + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
     f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_lle.append(metrics.accuracy_score(y_test, predictions))
     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 # # mlle
-elapsed_tot_mlle = []; f1_scores_mlle = []; accuracy_scores_mlle = []; cfm_mlle = []; states_mlle = []
+elapsed_tot_mlle = []
+f1_scores_mlle = []
+accuracy_scores_mlle = []
+cfm_mlle = []
+states_mlle = []
 for label in labels_dr_mlle:
     start_time = time.time()
     classifier.fit(X_train_dict_mlle[label], y_train)
     predictions = classifier.predict(X_test_dict_mlle[label])
     elapsed_time = time.time() - start_time
-    elapsed_tot_mlle.append(elapsed_time+elapsed_dr_mlle[label])
-    states_mlle.append(label + ':' + f'{elapsed_tot_mlle[-1]:.2f}')
+    elapsed_tot_mlle.append(elapsed_time + elapsed_dr_mlle[label])
+    states_mlle.append(label + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
     f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_mlle.append(metrics.accuracy_score(y_test, predictions))
     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
@@ -160,27 +168,45 @@ z_lle = accuracy_scores_lle
 x_mlle = list(range(len(labels_dr_mlle)))
 y_mlle = f1_scores_mlle
 z_mlle = accuracy_scores_mlle
+
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, y_lle, 'o-')
-ax[0].plot(x_mlle, y_mlle, 'x-')
 ax[0].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
 ax[0].set_xticks(x_lle)
 ax[0].set_xticklabels(states_lle, rotation=45, fontsize=20)
 ax[0].grid()
-ax[0].legend(['lle', 'mlle', 'raw'], fontsize=20)
-ax[0].set_title('F1-score', fontsize=30)
+ax[0].legend(['lle', 'raw'], fontsize=20)
+ax[0].set_title('F1-score LLE', fontsize=30)
 ax[0].tick_params(axis='y', which='major', labelsize=20)
-ax[1].plot(x_lle, z_lle, 'o-')
+ax[1].plot(x_mlle, y_mlle, 'x-')
+ax[1].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
+ax[1].set_xticks(x_mlle)
+ax[1].set_xticklabels(states_mlle, rotation=45, fontsize=20)
+ax[1].grid()
+ax[1].legend(['mlle', 'raw'], fontsize=20)
+ax[1].set_title('F1-score MLLE', fontsize=30)
+ax[1].tick_params(axis='y', which='major', labelsize=20)
+fig.savefig('./plots/f1.png')
+
+fig, ax = plt.subplots(2, 1, figsize=(60, 30))
+ax[0].plot(x_lle, z_lle, 'o-')
+ax[0].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
+ax[0].set_xticks(x_lle)
+ax[0].set_xticklabels(states_lle, rotation=45, fontsize=20)
+ax[0].grid()
+ax[0].legend(['lle', 'raw'], fontsize=20)
+ax[0].set_title('Accur LLE', fontsize=30)
+ax[0].tick_params(axis='y', which='major', labelsize=20)
 ax[1].plot(x_mlle, z_mlle, 'x-')
 ax[1].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
 ax[1].set_xticks(x_mlle)
 ax[1].set_xticklabels(states_mlle, rotation=45, fontsize=20)
 ax[1].grid()
-ax[1].legend(['lle', 'mlle', 'raw'], fontsize=20)
-ax[1].set_title('Accuracy', fontsize=30)
+ax[1].legend(['mlle', 'raw'], fontsize=20)
+ax[1].set_title('Accur MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
-fig.savefig('./plots/f1_acc.png')
-counter = 0
+fig.savefig('./plots/accur.png')
+
 fig, ax = plt.subplots(3, len(nb), figsize=(120, 30))
 sns.heatmap(cfm_raw, annot=True, ax=ax[0, 0])
 ax[0, 0].set_title(states_raw, fontsize=20)
@@ -191,7 +217,6 @@ for i in range(len(nb)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig('./plots/cfm.png')
-
 
 #
 # methods = OrderedDict(); methods['RAW'] = []
