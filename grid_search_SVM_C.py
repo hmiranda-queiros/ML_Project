@@ -108,9 +108,9 @@ elapsed_dict['MLLE'] = elapsed_time
 print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # --- classification --- #
-nb_raw = np.arange(50, 1000, 50)
-nb_lle = np.arange(50, 1000, 50)
-nb_mlle = np.arange(50, 1000, 50)
+nb_raw = np.arange(0.2, 1.2, 0.2)
+nb_lle = np.arange(0.2, 1.2, 0.2)
+nb_mlle = np.arange(0.2, 1.2, 0.2)
 
 # # raw
 elapsed_tot_raw = []
