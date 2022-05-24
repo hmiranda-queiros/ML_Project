@@ -79,102 +79,110 @@ print(
     f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 
 # --- dimensionality reduction --- #
-nb_lle = np.arange(6, 13, 1)
-nb_mlle = np.arange(36, 43, 1)
-
 methods = OrderedDict()
-elapsed_dr_lle = OrderedDict()
-elapsed_dr_mlle = OrderedDict()
-X_train_dict_lle = OrderedDict()
-X_test_dict_lle = OrderedDict()
-X_train_dict_mlle = OrderedDict()
-X_test_dict_mlle = OrderedDict()
-labels_dr_lle = []
-labels_dr_mlle = []
-for i in range(len(nb_lle)):
-    labels_dr_lle.append('LLE:cmp:' + str(14) + ";ngh:" + str(nb_lle[i]))
-for i in range(len(nb_mlle)):
-    labels_dr_mlle.append('MLLE:cmp:' + str(21) + ";ngh:" + str(nb_mlle[i]))
+methods['RAW'] = []
+X_train_dict = OrderedDict()
+X_train_dict['RAW'] = X_train
+X_test_dict = OrderedDict()
+X_test_dict['RAW'] = X_test
+elapsed_dict = OrderedDict()
+elapsed_dict['RAW'] = 0
+
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
-for i in range(len(nb_lle)):
-    methods[labels_dr_lle[i]] = LLE(n_components=14, n_neighbors=nb_lle[i], method="standard")
-    start_time = time.time()
-    X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train)
-    X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
-    elapsed_time = time.time() - start_time
-    elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
-    print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-for i in range(len(nb_mlle)):
-    methods[labels_dr_mlle[i]] = LLE(n_components=21, n_neighbors=nb_mlle[i], method="modified")
-    start_time = time.time()
-    X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train)
-    X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
-    elapsed_time = time.time() - start_time
-    elapsed_dr_mlle[labels_dr_mlle[i]] = elapsed_time
-    print(labels_dr_mlle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+methods['LLE'] = LLE(n_components=14, n_neighbors=11, method="standard")
+start_time = time.time()
+X_train_dict['LLE'] = methods['LLE'].fit_transform(X_train)
+X_test_dict['LLE'] = methods['LLE'].transform(X_test)
+elapsed_time = time.time() - start_time
+elapsed_dict['LLE'] = elapsed_time
+print('LLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+methods['MLLE'] = LLE(n_components=21, n_neighbors=39, method="modified")
+start_time = time.time()
+X_train_dict['MLLE'] = methods['MLLE'].fit_transform(X_train)
+X_test_dict['MLLE'] = methods['MLLE'].transform(X_test)
+elapsed_time = time.time() - start_time
+elapsed_dict['MLLE'] = elapsed_time
+print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # --- classification --- #
-classifier = SVC(C=1.0, kernel='rbf', gamma='scale', coef0=0)
+nb_raw = np.arange(1, 51, 1)
+nb_lle = np.arange(1, 51, 1)
+nb_mlle = np.arange(1, 51, 1)
 
 # # raw
-start_time = time.time()
-classifier.fit(X_train, y_train)
-predictions = classifier.predict(X_test)
-elapsed_time_raw = time.time() - start_time
-states_raw = 'RAW:t:' + f'{elapsed_time_raw:.2f}'
-f1_scores_raw = metrics.f1_score(y_test, predictions)
-accuracy_scores_raw = metrics.accuracy_score(y_test, predictions)
-cfm_raw = metrics.confusion_matrix(y_test, predictions, normalize='true')
-print('RAW finished in ' + f'{elapsed_time_raw:.2f}' + ' s!')
+elapsed_tot_raw = []
+f1_scores_raw = []
+accuracy_scores_raw = []
+cfm_raw = []
+states_raw = []
+for i in nb_raw:
+    classifier = SVC(C=i, kernel='rbf', gamma='scale', coef0=0)
+    start_time = time.time()
+    classifier.fit(X_train_dict["RAW"], y_train)
+    predictions = classifier.predict(X_test_dict["RAW"])
+    elapsed_time = time.time() - start_time
+    elapsed_tot_raw.append(elapsed_time + elapsed_dict['RAW'])
+    states_raw.append("RAW:C:" + str(i) + ';t:' + f'{elapsed_tot_raw[-1]:.2f}')
+    f1_scores_raw.append(metrics.f1_score(y_test, predictions, average='weighted'))
+    accuracy_scores_raw.append(metrics.accuracy_score(y_test, predictions))
+    cfm_raw.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
+    print("RAW:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+
 # # lle
 elapsed_tot_lle = []
 f1_scores_lle = []
 accuracy_scores_lle = []
 cfm_lle = []
 states_lle = []
-for label in labels_dr_lle:
+for i in nb_lle:
+    classifier = SVC(C=i, kernel='rbf', gamma='scale', coef0=0)
     start_time = time.time()
-    classifier.fit(X_train_dict_lle[label], y_train)
-    predictions = classifier.predict(X_test_dict_lle[label])
+    classifier.fit(X_train_dict["LLE"], y_train)
+    predictions = classifier.predict(X_test_dict["LLE"])
     elapsed_time = time.time() - start_time
-    elapsed_tot_lle.append(elapsed_time + elapsed_dr_lle[label])
-    states_lle.append(label + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
+    elapsed_tot_lle.append(elapsed_time + elapsed_dict['LLE'])
+    states_lle.append("LLE:C:" + str(i) + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
     f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_lle.append(metrics.accuracy_score(y_test, predictions))
     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+    print("LLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+
 # # mlle
 elapsed_tot_mlle = []
 f1_scores_mlle = []
 accuracy_scores_mlle = []
 cfm_mlle = []
 states_mlle = []
-for label in labels_dr_mlle:
+for i in nb_mlle:
+    classifier = SVC(C=i, kernel='rbf', gamma='scale', coef0=0)
     start_time = time.time()
-    classifier.fit(X_train_dict_mlle[label], y_train)
-    predictions = classifier.predict(X_test_dict_mlle[label])
+    classifier.fit(X_train_dict["MLLE"], y_train)
+    predictions = classifier.predict(X_test_dict["MLLE"])
     elapsed_time = time.time() - start_time
-    elapsed_tot_mlle.append(elapsed_time + elapsed_dr_mlle[label])
-    states_mlle.append(label + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
+    elapsed_tot_mlle.append(elapsed_time + elapsed_dict['MLLE'])
+    states_mlle.append("MLLE:C:" + str(i) + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
     f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_mlle.append(metrics.accuracy_score(y_test, predictions))
     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+    print("MLLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # # plots
-x_lle = list(range(len(labels_dr_lle)))
+x_lle = list(range(len(states_lle)))
 y_lle = f1_scores_lle
 z_lle = accuracy_scores_lle
-x_mlle = list(range(len(labels_dr_mlle)))
+x_mlle = list(range(len(states_mlle)))
 y_mlle = f1_scores_mlle
 z_mlle = accuracy_scores_mlle
+x_raw = list(range(len(states_raw)))
+y_raw = f1_scores_raw
+z_raw = accuracy_scores_raw
 
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, y_lle, 'o-')
-ax[0].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
+ax[0].plot(x_raw, y_raw, 'x-', color='r')
 ax[0].set_xticks(x_lle)
 ax[0].set_xticklabels(states_lle, rotation=45, fontsize=20)
 ax[0].grid()
@@ -182,7 +190,7 @@ ax[0].legend(['lle', 'raw'], fontsize=20)
 ax[0].set_title('F1-score LLE', fontsize=30)
 ax[0].tick_params(axis='y', which='major', labelsize=20)
 ax[1].plot(x_mlle, y_mlle, 'x-')
-ax[1].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
+ax[1].plot(x_raw, y_raw, 'o-', color='r')
 ax[1].set_xticks(x_mlle)
 ax[1].set_xticklabels(states_mlle, rotation=45, fontsize=20)
 ax[1].grid()
@@ -193,7 +201,7 @@ fig.savefig(f'./plots/f1_{nb_sample * 2}_samples.png')
 
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, z_lle, 'o-')
-ax[0].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
+ax[0].plot(x_raw, z_raw, 'x-', color='r')
 ax[0].set_xticks(x_lle)
 ax[0].set_xticklabels(states_lle, rotation=45, fontsize=20)
 ax[0].grid()
@@ -201,7 +209,7 @@ ax[0].legend(['lle', 'raw'], fontsize=20)
 ax[0].set_title('Accur LLE', fontsize=30)
 ax[0].tick_params(axis='y', which='major', labelsize=20)
 ax[1].plot(x_mlle, z_mlle, 'x-')
-ax[1].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
+ax[1].plot(x_raw, z_raw, 'o-', color='r')
 ax[1].set_xticks(x_mlle)
 ax[1].set_xticklabels(states_mlle, rotation=45, fontsize=20)
 ax[1].grid()
@@ -210,9 +218,11 @@ ax[1].set_title('Accur MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
 fig.savefig(f'./plots/accur_{nb_sample * 2}_samples.png')
 
-fig, ax = plt.subplots(3, max(len(nb_lle), len(nb_mlle)), figsize=(120, 30))
-sns.heatmap(cfm_raw, annot=True, ax=ax[0, 0])
-ax[0, 0].set_title(states_raw, fontsize=20)
+
+fig, ax = plt.subplots(3, max(len(nb_lle), len(nb_mlle), len(nb_raw)), figsize=(120, 30))
+for i in range(len(nb_raw)):
+    sns.heatmap(cfm_raw[i], annot=True, ax=ax[0, i])
+    ax[0, i].set_title(states_raw[i], fontsize=20)
 for i in range(len(nb_lle)):
     sns.heatmap(cfm_lle[i], annot=True, ax=ax[1, i])
     ax[1, i].set_title(states_lle[i], fontsize=20)
@@ -220,4 +230,3 @@ for i in range(len(nb_mlle)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
-
