@@ -51,7 +51,7 @@ print(
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
 # data_survived = data_survived.sample(nb_died_org, random_state=617)
-nb_sample = nb_died_org
+nb_sample = nb_died_org // 2
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
@@ -79,8 +79,8 @@ print(
     f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 
 # --- dimensionality reduction --- #
-nb_lle = np.arange(12, 19, 1)
-nb_mlle = np.arange(20, 26, 1)
+nb_lle = np.arange(2, 51, 1)
+nb_mlle = np.arange(2, 51, 1)
 # nb = np.arange(15, 25, 1)
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
@@ -92,7 +92,7 @@ X_test_dict_mlle = OrderedDict()
 labels_dr_lle = []
 labels_dr_mlle = []
 for i in range(len(nb_lle)):
-    labels_dr_lle.append('LLE:cmp:' + str(nb_lle[i]) + ";ngh:10")
+    labels_dr_lle.append('LLE:cmp:' + str(nb_lle[i]) + ";ngh:" + str(nb_lle[i] + 2))
 for i in range(len(nb_mlle)):
     labels_dr_mlle.append('MLLE:cmp:' + str(nb_mlle[i]) + ";ngh:" + str(nb_mlle[i] + 2))
 LLE = partial(manifold.LocallyLinearEmbedding,
@@ -100,7 +100,7 @@ LLE = partial(manifold.LocallyLinearEmbedding,
               neighbors_algorithm='auto',
               random_state=617)
 for i in range(len(nb_lle)):
-    methods[labels_dr_lle[i]] = LLE(n_components=nb_lle[i], n_neighbors=10, method="standard")
+    methods[labels_dr_lle[i]] = LLE(n_components=nb_lle[i], n_neighbors=nb_lle[i] + 2, method="standard")
     start_time = time.time()
     X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train)
     X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
