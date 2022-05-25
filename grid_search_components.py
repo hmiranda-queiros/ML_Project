@@ -17,6 +17,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
 
+import csv
+from itertools import zip_longest
+
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
 
@@ -81,7 +84,7 @@ print(
 # --- dimensionality reduction --- #
 nb_lle = np.arange(2, 51, 1)
 nb_mlle = np.arange(2, 51, 1)
-# nb = np.arange(15, 25, 1)
+
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
 elapsed_dr_mlle = OrderedDict()
@@ -219,5 +222,19 @@ for i in range(len(nb_lle)):
 for i in range(len(nb_mlle)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
-fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
+fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png')
 
+# # csv
+nb_compo_lle = nb_lle.tolist()
+nb_compo_mlle = nb_mlle.tolist()
+f1_scores_raw = [f1_scores_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
+accuracy_scores_raw = [accuracy_scores_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
+
+data = [nb_compo_lle, f1_scores_lle, accuracy_scores_lle, nb_compo_mlle, f1_scores_mlle, accuracy_scores_mlle,
+        f1_scores_raw, accuracy_scores_raw]
+export_data = zip_longest(*data, fillvalue='')
+with open(f'./csv/grd_sh_components_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
+    write = csv.writer(file)
+    write.writerow(("nb_compo_lle", "f1_scores_lle", "accuracy_scores_lle", "nb_compo_mlle", "f1_scores_mlle",
+                    "accuracy_scores_mlle", "f1_scores_raw", "accuracy_scores_raw"))
+    write.writerows(export_data)

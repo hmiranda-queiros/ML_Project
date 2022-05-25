@@ -17,6 +17,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
 
+import csv
+from itertools import zip_longest
+
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
 
@@ -218,7 +221,6 @@ ax[1].set_title('Accur MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
 fig.savefig(f'./plots/accur_{nb_sample * 2}_samples.png')
 
-
 fig, ax = plt.subplots(3, max(len(nb_lle), len(nb_mlle), len(nb_raw)), figsize=(120, 30))
 for i in range(len(nb_raw)):
     sns.heatmap(cfm_raw[i], annot=True, ax=ax[0, i])
@@ -230,3 +232,17 @@ for i in range(len(nb_mlle)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
+
+# # csv
+nb_C_lle = nb_lle.tolist()
+nb_C_mlle = nb_mlle.tolist()
+nb_C_raw = nb_raw.tolist()
+
+data = [nb_C_lle, f1_scores_lle, accuracy_scores_lle, nb_C_mlle, f1_scores_mlle, accuracy_scores_mlle,
+        nb_C_raw, f1_scores_raw, accuracy_scores_raw]
+export_data = zip_longest(*data, fillvalue='')
+with open(f'./csv/grd_sh_SVM_C_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
+    write = csv.writer(file)
+    write.writerow(("nb_C_lle", "f1_scores_lle", "accuracy_scores_lle", "nb_C_mlle", "f1_scores_mlle",
+                    "accuracy_scores_mlle", "nb_C_raw", "f1_scores_raw", "accuracy_scores_raw"))
+    write.writerows(export_data)

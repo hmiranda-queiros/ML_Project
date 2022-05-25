@@ -17,6 +17,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
 
+import csv
+from itertools import zip_longest
+
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
 
@@ -221,3 +224,17 @@ for i in range(len(nb_mlle)):
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
 
+# # csv
+nb_neigh_lle = nb_lle.tolist()
+nb_neigh_mlle = nb_mlle.tolist()
+f1_scores_raw = [f1_scores_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
+accuracy_scores_raw = [accuracy_scores_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
+
+data = [nb_neigh_lle, f1_scores_lle, accuracy_scores_lle, nb_neigh_mlle, f1_scores_mlle, accuracy_scores_mlle,
+        f1_scores_raw, accuracy_scores_raw]
+export_data = zip_longest(*data, fillvalue='')
+with open(f'./csv/grd_sh_neighbors_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
+    write = csv.writer(file)
+    write.writerow(("nb_neigh_lle", "f1_scores_lle", "accuracy_scores_lle", "nb_neigh_mlle", "f1_scores_mlle",
+                    "accuracy_scores_mlle", "f1_scores_raw", "accuracy_scores_raw"))
+    write.writerows(export_data)
