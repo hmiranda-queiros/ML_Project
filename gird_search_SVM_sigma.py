@@ -54,7 +54,7 @@ print(
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
 # data_survived = data_survived.sample(nb_died_org, random_state=617)
-nb_sample = nb_died_org // 2
+nb_sample = nb_died_org
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
@@ -95,14 +95,14 @@ LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
-methods['LLE'] = LLE(n_components=12, n_neighbors=11, method="standard")
+methods['LLE'] = LLE(n_components=12, n_neighbors=14, method="standard")
 start_time = time.time()
 X_train_dict['LLE'] = methods['LLE'].fit_transform(X_train)
 X_test_dict['LLE'] = methods['LLE'].transform(X_test)
 elapsed_time = time.time() - start_time
 elapsed_dict['LLE'] = elapsed_time
 print('LLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-methods['MLLE'] = LLE(n_components=19, n_neighbors=39, method="modified")
+methods['MLLE'] = LLE(n_components=19, n_neighbors=22, method="modified")
 start_time = time.time()
 X_train_dict['MLLE'] = methods['MLLE'].fit_transform(X_train)
 X_test_dict['MLLE'] = methods['MLLE'].transform(X_test)
@@ -111,9 +111,13 @@ elapsed_dict['MLLE'] = elapsed_time
 print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # --- classification --- #
-nb_raw = np.arange(1, 51, 1)
-nb_lle = np.arange(1, 51, 1)
-nb_mlle = np.arange(1, 51, 1)
+# nb_raw = np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000])
+# nb_lle = np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000])
+# nb_mlle = np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000])
+
+nb_raw = np.logspace(-5, -3, 20, endpoint=True)
+nb_lle = np.logspace(3, 5, 20, endpoint=True)
+nb_mlle = np.logspace(2, 4, 20, endpoint=True)
 
 # # raw
 elapsed_tot_raw = []

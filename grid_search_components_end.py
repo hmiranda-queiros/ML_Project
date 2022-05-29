@@ -82,8 +82,8 @@ print(
     f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 
 # --- dimensionality reduction --- #
-nb_lle = np.arange(8, 23, 1)
-nb_mlle = np.arange(19, 34, 1)
+nb_lle = np.arange(5, 25, 1)
+nb_mlle = np.arange(5, 25, 1)
 
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
@@ -95,15 +95,15 @@ X_test_dict_mlle = OrderedDict()
 labels_dr_lle = []
 labels_dr_mlle = []
 for i in range(len(nb_lle)):
-    labels_dr_lle.append('LLE:cmp:' + str(12) + ";ngh:" + str(nb_lle[i]))
+    labels_dr_lle.append('LLE:cmp:' + str(nb_lle[i]) + ";ngh:" + str(nb_lle[i] + 2))
 for i in range(len(nb_mlle)):
-    labels_dr_mlle.append('MLLE:cmp:' + str(19) + ";ngh:" + str(nb_mlle[i]))
+    labels_dr_mlle.append('MLLE:cmp:' + str(nb_mlle[i]) + ";ngh:" + str(nb_mlle[i] + 2))
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
 for i in range(len(nb_lle)):
-    methods[labels_dr_lle[i]] = LLE(n_components=12, n_neighbors=nb_lle[i], method="standard")
+    methods[labels_dr_lle[i]] = LLE(n_components=nb_lle[i], n_neighbors=nb_lle[i] + 2, method="standard")
     start_time = time.time()
     X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train)
     X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
@@ -111,7 +111,7 @@ for i in range(len(nb_lle)):
     elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
     print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 for i in range(len(nb_mlle)):
-    methods[labels_dr_mlle[i]] = LLE(n_components=19, n_neighbors=nb_mlle[i], method="modified")
+    methods[labels_dr_mlle[i]] = LLE(n_components=nb_mlle[i], n_neighbors=nb_mlle[i] + 2, method="modified")
     start_time = time.time()
     X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train)
     X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
@@ -120,9 +120,9 @@ for i in range(len(nb_mlle)):
     print(labels_dr_mlle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # --- classification --- #
-classifier = SVC(C=1.0, kernel='rbf', gamma='scale', coef0=0)
 
 # # raw
+classifier = SVC(C=1.0, kernel='rbf', gamma=0.00009, coef0=0)
 start_time = time.time()
 classifier.fit(X_train, y_train)
 predictions = classifier.predict(X_test)
@@ -133,6 +133,7 @@ accuracy_scores_raw = metrics.accuracy_score(y_test, predictions)
 cfm_raw = metrics.confusion_matrix(y_test, predictions, normalize='true')
 print('RAW finished in ' + f'{elapsed_time_raw:.2f}' + ' s!')
 # # lle
+classifier = SVC(C=1.0, kernel='rbf', gamma=8859, coef0=0)
 elapsed_clf_lle = []
 elapsed_tot_lle = []
 f1_scores_lle = []
@@ -152,6 +153,7 @@ for label in labels_dr_lle:
     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 # # mlle
+classifier = SVC(C=1.0, kernel='rbf', gamma=695, coef0=0)
 elapsed_clf_mlle = []
 elapsed_tot_mlle = []
 f1_scores_mlle = []
@@ -226,22 +228,22 @@ for i in range(len(nb_lle)):
 for i in range(len(nb_mlle)):
     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
     ax[2, i].set_title(states_mlle[i], fontsize=20)
-fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
+fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png')
 
 # # csv
-nb_neigh_lle = nb_lle.tolist()
-nb_neigh_mlle = nb_mlle.tolist()
-f1_scores_raw = [f1_scores_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
-accuracy_scores_raw = [accuracy_scores_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
-elapsed_times_raw = [elapsed_time_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
+nb_compo_lle = nb_lle.tolist()
+nb_compo_mlle = nb_mlle.tolist()
+f1_scores_raw = [f1_scores_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
+accuracy_scores_raw = [accuracy_scores_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
+elapsed_times_raw = [elapsed_time_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
 
-data = [nb_neigh_lle, f1_scores_lle, accuracy_scores_lle, list(elapsed_dr_lle.values()), elapsed_clf_lle, elapsed_tot_lle,
-        nb_neigh_mlle, f1_scores_mlle, accuracy_scores_mlle, list(elapsed_dr_mlle.values()), elapsed_clf_mlle, elapsed_tot_mlle,
+data = [nb_compo_lle, f1_scores_lle, accuracy_scores_lle, list(elapsed_dr_lle.values()), elapsed_clf_lle, elapsed_tot_lle,
+        nb_compo_mlle, f1_scores_mlle, accuracy_scores_mlle, list(elapsed_dr_mlle.values()), elapsed_clf_mlle, elapsed_tot_mlle,
         f1_scores_raw, accuracy_scores_raw, elapsed_times_raw]
 export_data = zip_longest(*data, fillvalue='')
-with open(f'./csv/grd_sh_neighbors_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
+with open(f'./csv/grd_sh_components_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
     write = csv.writer(file)
-    write.writerow(("nb_neigh_lle", "f1_scores_lle", "accuracy_scores_lle", "elapsed_dr_lle", "elapsed_clf_lle", "elapsed_tot_lle",
-                    "nb_neigh_mlle", "f1_scores_mlle", "accuracy_scores_mlle", "elapsed_dr_mlle", "elapsed_clf_mlle", "elapsed_tot_mlle",
+    write.writerow(("nb_compo_lle", "f1_scores_lle", "accuracy_scores_lle", "elapsed_dr_lle", "elapsed_clf_lle", "elapsed_tot_lle",
+                    "nb_compo_mlle", "f1_scores_mlle", "accuracy_scores_mlle", "elapsed_dr_mlle", "elapsed_clf_mlle", "elapsed_tot_mlle",
                     "f1_scores_raw", "accuracy_scores_raw", "elapsed_times_raw"))
     write.writerows(export_data)
