@@ -54,7 +54,7 @@ print(
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
 # data_survived = data_survived.sample(nb_died_org, random_state=617)
-nb_sample = nb_died_org
+nb_sample = nb_died_org // 2
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
@@ -95,14 +95,14 @@ LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
-methods['LLE'] = LLE(n_components=14, n_neighbors=11, method="standard")
+methods['LLE'] = LLE(n_components=12, n_neighbors=11, method="standard")
 start_time = time.time()
 X_train_dict['LLE'] = methods['LLE'].fit_transform(X_train)
 X_test_dict['LLE'] = methods['LLE'].transform(X_test)
 elapsed_time = time.time() - start_time
 elapsed_dict['LLE'] = elapsed_time
 print('LLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-methods['MLLE'] = LLE(n_components=21, n_neighbors=39, method="modified")
+methods['MLLE'] = LLE(n_components=19, n_neighbors=39, method="modified")
 start_time = time.time()
 X_train_dict['MLLE'] = methods['MLLE'].fit_transform(X_train)
 X_test_dict['MLLE'] = methods['MLLE'].transform(X_test)
@@ -122,55 +122,59 @@ accuracy_scores_raw = []
 cfm_raw = []
 states_raw = []
 for i in nb_raw:
-    classifier = SVC(C=i, kernel='rbf', gamma=0.00005, coef0=0)
+    classifier = SVC(C=1.0, kernel='rbf', gamma=i, coef0=0)
     start_time = time.time()
     classifier.fit(X_train_dict["RAW"], y_train)
     predictions = classifier.predict(X_test_dict["RAW"])
     elapsed_time = time.time() - start_time
     elapsed_tot_raw.append(elapsed_time + elapsed_dict['RAW'])
-    states_raw.append("RAW:C:" + str(i) + ';t:' + f'{elapsed_tot_raw[-1]:.2f}')
+    states_raw.append("RAW:Sigma:" + str(i) + ';t:' + f'{elapsed_tot_raw[-1]:.2f}')
     f1_scores_raw.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_raw.append(metrics.accuracy_score(y_test, predictions))
     cfm_raw.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print("RAW:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+    print("RAW:Sigma:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # # lle
+elapsed_clf_lle = []
 elapsed_tot_lle = []
 f1_scores_lle = []
 accuracy_scores_lle = []
 cfm_lle = []
 states_lle = []
 for i in nb_lle:
-    classifier = SVC(C=i, kernel='rbf', gamma=650, coef0=0)
+    classifier = SVC(C=1.0, kernel='rbf', gamma=i, coef0=0)
     start_time = time.time()
     classifier.fit(X_train_dict["LLE"], y_train)
     predictions = classifier.predict(X_test_dict["LLE"])
     elapsed_time = time.time() - start_time
+    elapsed_clf_lle.append(elapsed_time)
     elapsed_tot_lle.append(elapsed_time + elapsed_dict['LLE'])
-    states_lle.append("LLE:C:" + str(i) + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
+    states_lle.append("LLE:Sigma:" + str(i) + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
     f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_lle.append(metrics.accuracy_score(y_test, predictions))
     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print("LLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+    print("LLE:Sigma:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # # mlle
+elapsed_clf_mlle = []
 elapsed_tot_mlle = []
 f1_scores_mlle = []
 accuracy_scores_mlle = []
 cfm_mlle = []
 states_mlle = []
 for i in nb_mlle:
-    classifier = SVC(C=i, kernel='rbf', gamma=125, coef0=0)
+    classifier = SVC(C=1.0, kernel='rbf', gamma=i, coef0=0)
     start_time = time.time()
     classifier.fit(X_train_dict["MLLE"], y_train)
     predictions = classifier.predict(X_test_dict["MLLE"])
     elapsed_time = time.time() - start_time
+    elapsed_clf_mlle.append(elapsed_time)
     elapsed_tot_mlle.append(elapsed_time + elapsed_dict['MLLE'])
-    states_mlle.append("MLLE:C:" + str(i) + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
+    states_mlle.append("MLLE:Sigma:" + str(i) + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
     f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
     accuracy_scores_mlle.append(metrics.accuracy_score(y_test, predictions))
     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print("MLLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+    print("MLLE:Sigma:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # # plots
 x_lle = list(range(len(states_lle)))
@@ -238,11 +242,13 @@ nb_sigma_lle = nb_lle.tolist()
 nb_sigma_mlle = nb_mlle.tolist()
 nb_sigma_raw = nb_raw.tolist()
 
-data = [nb_sigma_lle, f1_scores_lle, accuracy_scores_lle, nb_sigma_mlle, f1_scores_mlle, accuracy_scores_mlle,
-        nb_sigma_raw, f1_scores_raw, accuracy_scores_raw]
+data = [nb_sigma_lle, f1_scores_lle, accuracy_scores_lle, elapsed_clf_lle, elapsed_tot_lle,
+        nb_sigma_mlle, f1_scores_mlle, accuracy_scores_mlle, elapsed_clf_mlle, elapsed_tot_mlle,
+        nb_sigma_raw, f1_scores_raw, accuracy_scores_raw, elapsed_tot_raw]
 export_data = zip_longest(*data, fillvalue='')
 with open(f'./csv/grd_sh_SVM_sigma_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
     write = csv.writer(file)
-    write.writerow(("nb_sigma_lle", "f1_scores_lle", "accuracy_scores_lle", "nb_sigma_mlle", "f1_scores_mlle",
-                    "accuracy_scores_mlle", "nb_sigma_raw", "f1_scores_raw", "accuracy_scores_raw"))
+    write.writerow(("nb_sigma_lle", "f1_scores_lle", "accuracy_scores_lle", "elapsed_clf_lle", "elapsed_tot_lle",
+                    "nb_sigma_mlle", "f1_scores_mlle", "accuracy_scores_mlle", "elapsed_clf_mlle", "elapsed_tot_mlle",
+                    "nb_sigma_raw", "f1_scores_raw", "accuracy_scores_raw", "elapsed_tot_raw"))
     write.writerows(export_data)

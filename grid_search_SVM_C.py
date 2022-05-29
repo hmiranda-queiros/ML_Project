@@ -54,7 +54,7 @@ print(
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
 # data_survived = data_survived.sample(nb_died_org, random_state=617)
-nb_sample = nb_died_org
+nb_sample = nb_died_org // 2
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
@@ -95,14 +95,14 @@ LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
-methods['LLE'] = LLE(n_components=14, n_neighbors=11, method="standard")
+methods['LLE'] = LLE(n_components=12, n_neighbors=11, method="standard")
 start_time = time.time()
 X_train_dict['LLE'] = methods['LLE'].fit_transform(X_train)
 X_test_dict['LLE'] = methods['LLE'].transform(X_test)
 elapsed_time = time.time() - start_time
 elapsed_dict['LLE'] = elapsed_time
 print('LLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-methods['MLLE'] = LLE(n_components=21, n_neighbors=39, method="modified")
+methods['MLLE'] = LLE(n_components=19, n_neighbors=39, method="modified")
 start_time = time.time()
 X_train_dict['MLLE'] = methods['MLLE'].fit_transform(X_train)
 X_test_dict['MLLE'] = methods['MLLE'].transform(X_test)
@@ -111,9 +111,9 @@ elapsed_dict['MLLE'] = elapsed_time
 print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # --- classification --- #
-nb_raw = np.arange(0.2, 1.2, 0.2)
-nb_lle = np.arange(0.2, 1.2, 0.2)
-nb_mlle = np.arange(0.2, 1.2, 0.2)
+nb_raw = np.arange(1, 51, 1)
+nb_lle = np.arange(1, 51, 1)
+nb_mlle = np.arange(1, 51, 1)
 
 # # raw
 elapsed_tot_raw = []
@@ -135,6 +135,7 @@ for i in nb_raw:
     print("RAW:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # # lle
+elapsed_clf_lle = []
 elapsed_tot_lle = []
 f1_scores_lle = []
 accuracy_scores_lle = []
@@ -146,6 +147,7 @@ for i in nb_lle:
     classifier.fit(X_train_dict["LLE"], y_train)
     predictions = classifier.predict(X_test_dict["LLE"])
     elapsed_time = time.time() - start_time
+    elapsed_clf_lle.append(elapsed_time)
     elapsed_tot_lle.append(elapsed_time + elapsed_dict['LLE'])
     states_lle.append("LLE:C:" + str(i) + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
     f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
@@ -154,6 +156,7 @@ for i in nb_lle:
     print("LLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # # mlle
+elapsed_clf_mlle = []
 elapsed_tot_mlle = []
 f1_scores_mlle = []
 accuracy_scores_mlle = []
@@ -165,6 +168,7 @@ for i in nb_mlle:
     classifier.fit(X_train_dict["MLLE"], y_train)
     predictions = classifier.predict(X_test_dict["MLLE"])
     elapsed_time = time.time() - start_time
+    elapsed_clf_mlle.append(elapsed_time)
     elapsed_tot_mlle.append(elapsed_time + elapsed_dict['MLLE'])
     states_mlle.append("MLLE:C:" + str(i) + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
     f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
@@ -238,11 +242,13 @@ nb_C_lle = nb_lle.tolist()
 nb_C_mlle = nb_mlle.tolist()
 nb_C_raw = nb_raw.tolist()
 
-data = [nb_C_lle, f1_scores_lle, accuracy_scores_lle, nb_C_mlle, f1_scores_mlle, accuracy_scores_mlle,
-        nb_C_raw, f1_scores_raw, accuracy_scores_raw]
+data = [nb_C_lle, f1_scores_lle, accuracy_scores_lle, elapsed_clf_lle, elapsed_tot_lle,
+        nb_C_mlle, f1_scores_mlle, accuracy_scores_mlle, elapsed_clf_mlle, elapsed_tot_mlle,
+        nb_C_raw, f1_scores_raw, accuracy_scores_raw, elapsed_tot_raw]
 export_data = zip_longest(*data, fillvalue='')
 with open(f'./csv/grd_sh_SVM_C_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
     write = csv.writer(file)
-    write.writerow(("nb_C_lle", "f1_scores_lle", "accuracy_scores_lle", "nb_C_mlle", "f1_scores_mlle",
-                    "accuracy_scores_mlle", "nb_C_raw", "f1_scores_raw", "accuracy_scores_raw"))
+    write.writerow(("nb_C_lle", "f1_scores_lle", "accuracy_scores_lle", "elapsed_clf_lle", "elapsed_tot_lle",
+                    "nb_C_mlle", "f1_scores_mlle", "accuracy_scores_mlle", "elapsed_clf_mlle", "elapsed_tot_mlle",
+                    "nb_C_raw", "f1_scores_raw", "accuracy_scores_raw", "elapsed_tot_raw"))
     write.writerows(export_data)

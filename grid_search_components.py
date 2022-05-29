@@ -54,7 +54,7 @@ print(
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
 # data_survived = data_survived.sample(nb_died_org, random_state=617)
-nb_sample = nb_died_org // 2
+nb_sample = nb_died_org
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
 data_sp = pd.concat([data_died, data_survived], ignore_index=True)
@@ -82,8 +82,8 @@ print(
     f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
 
 # --- dimensionality reduction --- #
-nb_lle = np.arange(2, 51, 1)
-nb_mlle = np.arange(2, 51, 1)
+nb_lle = np.arange(8, 19, 1)
+nb_mlle = np.arange(18, 29, 1)
 
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
@@ -133,6 +133,7 @@ accuracy_scores_raw = metrics.accuracy_score(y_test, predictions)
 cfm_raw = metrics.confusion_matrix(y_test, predictions, normalize='true')
 print('RAW finished in ' + f'{elapsed_time_raw:.2f}' + ' s!')
 # # lle
+elapsed_clf_lle = []
 elapsed_tot_lle = []
 f1_scores_lle = []
 accuracy_scores_lle = []
@@ -143,6 +144,7 @@ for label in labels_dr_lle:
     classifier.fit(X_train_dict_lle[label], y_train)
     predictions = classifier.predict(X_test_dict_lle[label])
     elapsed_time = time.time() - start_time
+    elapsed_clf_lle.append(elapsed_time)
     elapsed_tot_lle.append(elapsed_time + elapsed_dr_lle[label])
     states_lle.append(label + ';t:' + f'{elapsed_tot_lle[-1]:.2f}')
     f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
@@ -150,6 +152,7 @@ for label in labels_dr_lle:
     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 # # mlle
+elapsed_clf_mlle = []
 elapsed_tot_mlle = []
 f1_scores_mlle = []
 accuracy_scores_mlle = []
@@ -160,6 +163,7 @@ for label in labels_dr_mlle:
     classifier.fit(X_train_dict_mlle[label], y_train)
     predictions = classifier.predict(X_test_dict_mlle[label])
     elapsed_time = time.time() - start_time
+    elapsed_clf_mlle.append(elapsed_time)
     elapsed_tot_mlle.append(elapsed_time + elapsed_dr_mlle[label])
     states_mlle.append(label + ';t:' + f'{elapsed_tot_mlle[-1]:.2f}')
     f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
@@ -229,12 +233,15 @@ nb_compo_lle = nb_lle.tolist()
 nb_compo_mlle = nb_mlle.tolist()
 f1_scores_raw = [f1_scores_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
 accuracy_scores_raw = [accuracy_scores_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
+elapsed_times_raw = [elapsed_time_raw for i in range(max(len(nb_compo_lle), len(nb_compo_mlle)))]
 
-data = [nb_compo_lle, f1_scores_lle, accuracy_scores_lle, nb_compo_mlle, f1_scores_mlle, accuracy_scores_mlle,
-        f1_scores_raw, accuracy_scores_raw]
+data = [nb_compo_lle, f1_scores_lle, accuracy_scores_lle, list(elapsed_dr_lle.values()), elapsed_clf_lle, elapsed_tot_lle,
+        nb_compo_mlle, f1_scores_mlle, accuracy_scores_mlle, list(elapsed_dr_mlle.values()), elapsed_clf_mlle, elapsed_tot_mlle,
+        f1_scores_raw, accuracy_scores_raw, elapsed_times_raw]
 export_data = zip_longest(*data, fillvalue='')
 with open(f'./csv/grd_sh_components_{nb_sample * 2}.csv', 'w', encoding="ISO-8859-1", newline='') as file:
     write = csv.writer(file)
-    write.writerow(("nb_compo_lle", "f1_scores_lle", "accuracy_scores_lle", "nb_compo_mlle", "f1_scores_mlle",
-                    "accuracy_scores_mlle", "f1_scores_raw", "accuracy_scores_raw"))
+    write.writerow(("nb_compo_lle", "f1_scores_lle", "accuracy_scores_lle", "elapsed_dr_lle", "elapsed_clf_lle", "elapsed_tot_lle",
+                    "nb_compo_mlle", "f1_scores_mlle", "accuracy_scores_mlle", "elapsed_dr_mlle", "elapsed_clf_mlle", "elapsed_tot_mlle",
+                    "f1_scores_raw", "accuracy_scores_raw", "elapsed_times_raw"))
     write.writerows(export_data)

@@ -1,0 +1,2 @@
+LLE : nb_comp = 12 nb_neigh = 14
+MLLE : nb_comp = 19 nb_neigh = 21
