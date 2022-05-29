@@ -92,14 +92,14 @@ LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
               random_state=617)
-methods['LLE'] = LLE(n_components=14, n_neighbors=11, method="standard")
+methods['LLE'] = LLE(n_components=12, n_neighbors=14, method="standard")
 start_time = time.time()
 X_train_dict['LLE'] = methods['LLE'].fit_transform(X_train)
 X_test_dict['LLE'] = methods['LLE'].transform(X_test)
 elapsed_time = time.time() - start_time
 elapsed_dict['LLE'] = elapsed_time
 print('LLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-methods['MLLE'] = LLE(n_components=21, n_neighbors=39, method="modified")
+methods['MLLE'] = LLE(n_components=19, n_neighbors=22, method="modified")
 start_time = time.time()
 X_train_dict['MLLE'] = methods['MLLE'].fit_transform(X_train)
 X_test_dict['MLLE'] = methods['MLLE'].transform(X_test)
@@ -116,9 +116,11 @@ cfms = []
 
 for method in methods:
     if method == "RAW":
-        classifier = SVC(C=5, kernel='rbf', gamma='scale', coef0=0)
+        classifier = SVC(C=1.0, kernel='rbf', gamma=0.00009, coef0=0)
+    elif method == "LLE":
+        classifier = SVC(C=1.0, kernel='rbf', gamma=8859, coef0=0)
     else:
-        classifier = SVC(C=1, kernel='rbf', gamma='scale', coef0=0)
+        classifier = SVC(C=1.0, kernel='rbf', gamma=695, coef0=0)
 
     start_time = time.time()
     classifier.fit(X_train_dict[method], y_train)
