@@ -111,6 +111,7 @@ print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 # --- classification --- #
 states = []
 elapsed = []
+elapsed_clf = []
 f1_scores = []
 accuracy_scores = []
 cfms = []
@@ -126,6 +127,7 @@ for method in methods:
     classifier.fit(X_train_dict[method], y_train)
     predictions = classifier.predict(X_test_dict[method])
     elapsed_time = time.time() - start_time
+    elapsed_clf.append(elapsed_time)
     states.append(
         method + ':SVM:' + f'{elapsed_time:.2f}' + ':' + f'{elapsed_time + elapsed_dict[method]:.2f}')
     print(states[-1])
@@ -167,6 +169,9 @@ cbar = ax.collections[0].colorbar
 cbar.ax.tick_params(labelsize=15)
 fig.tight_layout()
 fig.savefig('./plots/cfm_mlle.svg')
-
+print(states)
+print(elapsed_dict)
+print(elapsed_clf)
+print(elapsed)
 print(accuracy_scores)
 print(f1_scores)
