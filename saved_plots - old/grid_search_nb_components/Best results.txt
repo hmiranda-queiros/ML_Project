@@ -1,2 +1,0 @@
-LLE : nb_comp = 14 
-MLLE : nb_comp = 21

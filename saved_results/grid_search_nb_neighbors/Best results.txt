@@ -1,2 +1,0 @@
-LLE : nb_comp = 12 nb_neigh = 14 (11 best but < 12)
-MLLE : nb_comp = 19 nb_neigh = 21 or 22 (but 22 appears more stable)

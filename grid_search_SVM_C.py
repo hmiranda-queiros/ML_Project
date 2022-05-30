@@ -111,9 +111,9 @@ elapsed_dict['MLLE'] = elapsed_time
 print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
 # --- classification --- #
-nb_raw = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
-nb_lle = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
-nb_mlle = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
+# nb_raw = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
+# nb_lle = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
+# nb_mlle = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
 
 nb_raw = np.logspace(-1, 1, 20, endpoint=True)
 nb_lle = np.logspace(-1, 1, 20, endpoint=True)

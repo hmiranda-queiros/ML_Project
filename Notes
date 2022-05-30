@@ -1,9 +1,0 @@
-Kernels in sklearn:
-	linear: K(X, Y) = <X, Y>
-	poly: K(X, Y) = (gamma <X, Y> + coef0)^degree
-	rbf: K(x, y) = exp(-gamma ||x-y||^2)
-	sigmoid: K(x, y) = tanh(gamma <x, y> + coef0
-
-Check the removed features
-Remove features based on dependency (above 0.8)
-

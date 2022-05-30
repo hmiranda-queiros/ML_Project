@@ -1,3 +1,0 @@
-RAW : Sigma = 0.00009
-LLE : nb_comp = 12, nb_neigh = 14, Sigma = 8859
-MLLE : nb_comp = 19, nb_neigh = 22, Sigma = 695
