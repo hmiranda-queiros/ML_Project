@@ -149,7 +149,7 @@ def apply_eda(data, feature_name):
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
 
-# # remove empty feature
+# remove empty feature
 data.drop(['Unnamed: 83'], axis=1, inplace=True)
 
 # # remove useless features
@@ -161,216 +161,216 @@ data.drop(['encounter_id', 'patient_id', 'hospital_id',
 
 # # remove rows with at least one null value in all features
 data = data[data.isna().sum(axis=1) == 0]
-
+#
 # # Converting categorical values to numerical ones
 for item in ['ethnicity', 'gender']:
     data[item] = data[item].astype('category')
     data[item+'_num'] = data[item].cat.codes
     data.drop(item, axis=1, inplace=True)
-data.to_csv('./data/data_pp.csv', index=False)
-print(f'Original: #data = {data.shape[0]}, #features = {data.shape[1]}')
-nb_patients_org = len(data['hospital_death'])
-nb_survived_org = len(data[data['hospital_death'] == 0])
-nb_died_org = len(data[data['hospital_death'] == 1])
-death_proportion_org = nb_died_org / nb_patients_org
-print(f'Original: #patients = {nb_patients_org}, #survived = {nb_survived_org}, #died = {nb_died_org}, proportion = {death_proportion_org:.3f}')
+# # data.to_csv('./data/data_pp.csv', index=False)
+# print(f'Original: #data = {data.shape[0]}, #features = {data.shape[1]}')
+# nb_patients_org = len(data['hospital_death'])
+# nb_survived_org = len(data[data['hospital_death'] == 0])
+# nb_died_org = len(data[data['hospital_death'] == 1])
+# death_proportion_org = nb_died_org / nb_patients_org
+# print(f'Original: #patients = {nb_patients_org}, #survived = {nb_survived_org}, #died = {nb_died_org}, proportion = {death_proportion_org:.3f}')
 
 
-# --- sampling and balancing --- #
-# # spliting to train and test
-y = data['hospital_death']
-X = data.drop(['hospital_death'], axis=1)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=617)
-# # normalizing train and test
-sc = StandardScaler()
-X_train = sc.fit_transform(X_train)
-X_test = sc.transform(X_test)
-print(f'Train Split: #data = {X_train.shape[0]}, #features = {X_train.shape[1]}')
-nb_patients_spl = len(y_train)
-nb_survived_spl = len(y_train[y_train == 0])
-nb_died_spl = len(y_train[y_train == 1])
-death_proportion_spl = nb_died_spl / nb_patients_spl
-print(f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
-# # sampling
-over = SMOTE(sampling_strategy=death_proportion_spl*1.1, random_state=617)
-under = RandomUnderSampler(sampling_strategy=0.8, random_state=617)
-steps = [('o', over), ('u', under)]
-pipeline = Pipeline(steps=steps)
-X_train_smp, y_train_smp = pipeline.fit_resample(X_train, y_train)
-print(f'Train Sample: #data = {X_train_smp.shape[0]}, #features = {X_train_smp.shape[1]}')
-nb_patients_smp = len(y_train_smp)
-nb_survived_smp = len(y_train_smp[y_train_smp == 0])
-nb_died_smp = len(y_train_smp[y_train_smp == 1])
-death_proportion_smp = nb_died_smp / nb_patients_smp
-print(f'Train Sample: #patients = {nb_patients_smp}, #survived = {nb_survived_smp}, #died = {nb_died_smp}, proportion = {death_proportion_smp:.3f}')
-
-
-# --- dimensionality reduction --- #
-# # kpca
-# nb_components_kpca = 20
+# # --- sampling and balancing --- #
+# # # spliting to train and test
+# y = data['hospital_death']
+# X = data.drop(['hospital_death'], axis=1)
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=617)
+# # # normalizing train and test
+# sc = StandardScaler()
+# X_train = sc.fit_transform(X_train)
+# X_test = sc.transform(X_test)
+# print(f'Train Split: #data = {X_train.shape[0]}, #features = {X_train.shape[1]}')
+# nb_patients_spl = len(y_train)
+# nb_survived_spl = len(y_train[y_train == 0])
+# nb_died_spl = len(y_train[y_train == 1])
+# death_proportion_spl = nb_died_spl / nb_patients_spl
+# print(f'Train Split: #patients = {nb_patients_spl}, #survived = {nb_survived_spl}, #died = {nb_died_spl}, proportion = {death_proportion_spl:.3f}')
+# # # sampling
+# over = SMOTE(sampling_strategy=death_proportion_spl*1.1, random_state=617)
+# under = RandomUnderSampler(sampling_strategy=0.8, random_state=617)
+# steps = [('o', over), ('u', under)]
+# pipeline = Pipeline(steps=steps)
+# X_train_smp, y_train_smp = pipeline.fit_resample(X_train, y_train)
+# print(f'Train Sample: #data = {X_train_smp.shape[0]}, #features = {X_train_smp.shape[1]}')
+# nb_patients_smp = len(y_train_smp)
+# nb_survived_smp = len(y_train_smp[y_train_smp == 0])
+# nb_died_smp = len(y_train_smp[y_train_smp == 1])
+# death_proportion_smp = nb_died_smp / nb_patients_smp
+# print(f'Train Sample: #patients = {nb_patients_smp}, #survived = {nb_survived_smp}, #died = {nb_died_smp}, proportion = {death_proportion_smp:.3f}')
+#
+#
+# # --- dimensionality reduction --- #
+# # # kpca
+# # nb_components_kpca = 20
+# # kpca = KernelPCA(n_components=nb_components_kpca, kernel='rbf')
+# # X_train_kpca = kpca.fit_transform(X_train_smp)
+# # fig, ax = plt.subplots(nb_components_kpca, nb_components_kpca, figsize=(70, 70))
+# # for i in range(nb_components_kpca):
+# #     for j in range(nb_components_kpca):
+# #         if i == j:
+# #             continue
+# #         ax[i, j].scatter(X_train_kpca[y_train_smp == 0, i],
+# #                          X_train_kpca[y_train_smp == 0, j], c='green', label='Survived')
+# #         ax[i, j].scatter(X_train_kpca[y_train_smp == 1, i],
+# #                          X_train_kpca[y_train_smp == 1, j], c='red', label='Died')
+# #         ax[i, j].xaxis.set_major_formatter(NullFormatter())
+# #         ax[i, j].yaxis.set_major_formatter(NullFormatter())
+# #         ax[i, j].axis('tight')
+# #         ax[i, j].legend()
+# #         ax[i, j].set_xlabel(f'dim : {i+1}')
+# #         ax[i, j].set_ylabel(f'dim : {j+1}')
+# # fig.savefig('plots/kpca.png')
+# # fig, ax = plt.subplots()
+# # ax.plot(kpca.eigenvalues_, 'b', linewidth=2)
+# # ax.set_xlabel('#Compeonents')
+# # ax.set_ylabel('Eigenvalues')
+# # fig.savefig('plots/kpca_eigenvalues.png')
+# # eigen_cum = np.cumsum(kpca.eigenvalues_) / np.sum(kpca.eigenvalues_)
+# # fig, ax = plt.subplots()
+# # ax.plot(eigen_cum, 'b', linewidth=2)
+# # ax.set_xlabel('#Compeonents')
+# # ax.set_ylabel('Cumulative Eigenvalues')
+# # fig.savefig('plots/kpca_eigenvalues_cum.png')
+# nb_components_kpca = 10
 # kpca = KernelPCA(n_components=nb_components_kpca, kernel='rbf')
 # X_train_kpca = kpca.fit_transform(X_train_smp)
-# fig, ax = plt.subplots(nb_components_kpca, nb_components_kpca, figsize=(70, 70))
-# for i in range(nb_components_kpca):
-#     for j in range(nb_components_kpca):
-#         if i == j:
-#             continue
-#         ax[i, j].scatter(X_train_kpca[y_train_smp == 0, i],
-#                          X_train_kpca[y_train_smp == 0, j], c='green', label='Survived')
-#         ax[i, j].scatter(X_train_kpca[y_train_smp == 1, i],
-#                          X_train_kpca[y_train_smp == 1, j], c='red', label='Died')
-#         ax[i, j].xaxis.set_major_formatter(NullFormatter())
-#         ax[i, j].yaxis.set_major_formatter(NullFormatter())
-#         ax[i, j].axis('tight')
-#         ax[i, j].legend()
-#         ax[i, j].set_xlabel(f'dim : {i+1}')
-#         ax[i, j].set_ylabel(f'dim : {j+1}')
-# fig.savefig('plots/kpca.png')
-# fig, ax = plt.subplots()
-# ax.plot(kpca.eigenvalues_, 'b', linewidth=2)
-# ax.set_xlabel('#Compeonents')
-# ax.set_ylabel('Eigenvalues')
-# fig.savefig('plots/kpca_eigenvalues.png')
-# eigen_cum = np.cumsum(kpca.eigenvalues_) / np.sum(kpca.eigenvalues_)
-# fig, ax = plt.subplots()
-# ax.plot(eigen_cum, 'b', linewidth=2)
-# ax.set_xlabel('#Compeonents')
-# ax.set_ylabel('Cumulative Eigenvalues')
-# fig.savefig('plots/kpca_eigenvalues_cum.png')
-nb_components_kpca = 10
-kpca = KernelPCA(n_components=nb_components_kpca, kernel='rbf')
-X_train_kpca = kpca.fit_transform(X_train_smp)
-X_test_kpca = kpca.transform(X_test)
-
-# # lle and mlle
-nb = np.arange(nb_components_kpca-5, nb_components_kpca+10, 1)
-# nb = np.arange(15, 25, 1)
-methods = OrderedDict()
-elapsed_dr_lle = OrderedDict()
-elapsed_dr_mlle = OrderedDict()
-X_train_dict_lle = OrderedDict()
-X_test_dict_lle = OrderedDict()
-X_train_dict_mlle = OrderedDict()
-X_test_dict_mlle = OrderedDict()
-labels_dr_lle = []
-labels_dr_mlle = []
-for i in range(len(nb)):
-    labels_dr_lle.append('LLE:' + str(nb[i]))
-    labels_dr_mlle.append('MLLE:' + str(nb[i]))
-LLE = partial(manifold.LocallyLinearEmbedding,
-              eigen_solver='dense',
-              neighbors_algorithm='auto',
-              n_neighbors=13,
-              random_state=617)
-for i in range(len(nb)):
-    methods[labels_dr_lle[i]] = LLE(n_neighbors=nb[i], method="standard")
-    start_time = time.time()
-    X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train_smp)
-    X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
-    elapsed_time = time.time() - start_time
-    elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
-    print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-for i in range(len(nb)):
-    methods[labels_dr_mlle[i]] = LLE(n_neighbors=nb[i], method="modified")
-    start_time = time.time()
-    X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train_smp)
-    X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
-    elapsed_time = time.time() - start_time
-    elapsed_dr_mlle[labels_dr_mlle[i]] = elapsed_time
-    print(labels_dr_mlle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-
-# --- classification --- #
-# # classifier = SVC(C=1.0, kernel='rbf', gamma='scale', probability=False, class_weight='balanced')
-# # classifier = GaussianProcessClassifier()
-# # classifier = GaussianNB()
-classifier = LogisticRegression(penalty='l2', dual=False, C=1.0, fit_intercept=True, random_state=617, max_iter=2000)
-# classifier = LinearSVC(C=1.0, random_state=617)
-# # raw
-start_time = time.time()
-classifier.fit(X_train_smp, y_train_smp)
-predictions = classifier.predict(X_test)
-elapsed_time_raw = time.time() - start_time
-states_raw = 'RAW:' + f'{elapsed_time_raw:.2f}'
-f1_scores_raw = metrics.f1_score(y_test, predictions, average='weighted')
-accuracy_scores_raw = metrics.accuracy_score(y_test, predictions)
-cfm_raw = metrics.confusion_matrix(y_test, predictions, normalize='true')
-print('RAW finished in ' + f'{elapsed_time_raw:.2f}' + ' s!')
-# # kpca
-start_time = time.time()
-classifier.fit(X_train_kpca, y_train_smp)
-predictions = classifier.predict(X_test_kpca)
-elapsed_time_kpca = time.time() - start_time
-states_kpca = 'KPCA:' + str(nb_components_kpca) + ':' + f'{elapsed_time_kpca:.2f}'
-f1_scores_kpca = metrics.f1_score(y_test, predictions, average='weighted')
-accuracy_scores_kpca = metrics.accuracy_score(y_test, predictions)
-cfm_kpca = metrics.confusion_matrix(y_test, predictions, normalize='true')
-print('KPCA:' + str(nb_components_kpca) + ' finished in ' + f'{elapsed_time_kpca:.2f}' + ' s!')
-# # lle
-elapsed_tot_lle = []; f1_scores_lle = []; accuracy_scores_lle = []; cfm_lle = []; states_lle = []
-for label in labels_dr_lle:
-    start_time = time.time()
-    classifier.fit(X_train_dict_lle[label], y_train_smp)
-    predictions = classifier.predict(X_test_dict_lle[label])
-    elapsed_time = time.time() - start_time
-    elapsed_tot_lle.append(elapsed_time+elapsed_dr_lle[label])
-    states_lle.append(label + ':' + f'{elapsed_tot_lle[-1]:.2f}')
-    f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
-    accuracy_scores_lle.append(metrics.accuracy_score(y_test, predictions))
-    cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-# # mlle
-elapsed_tot_mlle = []; f1_scores_mlle = []; accuracy_scores_mlle = []; cfm_mlle = []; states_mlle = []
-for label in labels_dr_mlle:
-    start_time = time.time()
-    classifier.fit(X_train_dict_mlle[label], y_train_smp)
-    predictions = classifier.predict(X_test_dict_mlle[label])
-    elapsed_time = time.time() - start_time
-    elapsed_tot_mlle.append(elapsed_time+elapsed_dr_mlle[label])
-    states_mlle.append(label + ':' + f'{elapsed_tot_mlle[-1]:.2f}')
-    f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
-    accuracy_scores_mlle.append(metrics.accuracy_score(y_test, predictions))
-    cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
-    print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-# # plots
-x_lle = list(range(len(labels_dr_lle)))
-y_lle = f1_scores_lle
-z_lle = accuracy_scores_lle
-x_mlle = list(range(len(labels_dr_mlle)))
-y_mlle = f1_scores_mlle
-z_mlle = accuracy_scores_mlle
-fig, ax = plt.subplots(2, 1, figsize=(60, 30))
-ax[0].plot(x_lle, y_lle, 'o-')
-ax[0].plot(x_mlle, y_mlle, 'x-')
-ax[0].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
-ax[0].axhline(y=f1_scores_kpca, color='k', linestyle='-', linewidth=2)
-ax[0].set_xticks(x_lle)
-ax[0].set_xticklabels(states_lle, rotation=45, fontsize=20)
-ax[0].grid()
-ax[0].legend(['lle', 'mlle', 'raw', 'kpca'], fontsize=20)
-ax[0].set_title('F1-score', fontsize=30)
-ax[0].tick_params(axis='y', which='major', labelsize=20)
-ax[1].plot(x_lle, z_lle, 'o-')
-ax[1].plot(x_mlle, z_mlle, 'x-')
-ax[1].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
-ax[1].axhline(y=accuracy_scores_kpca, color='k', linestyle='-', linewidth=2)
-ax[1].set_xticks(x_mlle)
-ax[1].set_xticklabels(states_mlle, rotation=45, fontsize=20)
-ax[1].grid()
-ax[1].legend(['lle', 'mlle', 'raw', 'kpca'], fontsize=20)
-ax[1].set_title('Accuracy', fontsize=30)
-ax[1].tick_params(axis='y', which='major', labelsize=20)
-fig.savefig('./plots/f1_acc.png')
-counter = 0
-fig, ax = plt.subplots(3, len(nb), figsize=(120, 30))
-sns.heatmap(cfm_raw, annot=True, ax=ax[0, 0])
-ax[0, 0].set_title(states_raw, fontsize=20)
-sns.heatmap(cfm_kpca, annot=True, ax=ax[0, 1])
-ax[0, 1].set_title(states_kpca, fontsize=20)
-for i in range(len(nb)):
-    sns.heatmap(cfm_lle[i], annot=True, ax=ax[1, i])
-    ax[1, i].set_title(states_lle[i], fontsize=20)
-for i in range(len(nb)):
-    sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
-    ax[2, i].set_title(states_mlle[i], fontsize=20)
-fig.savefig('./plots/cfm.png')
-
+# X_test_kpca = kpca.transform(X_test)
+#
+# # # lle and mlle
+# nb = np.arange(nb_components_kpca-5, nb_components_kpca+10, 1)
+# # nb = np.arange(15, 25, 1)
+# methods = OrderedDict()
+# elapsed_dr_lle = OrderedDict()
+# elapsed_dr_mlle = OrderedDict()
+# X_train_dict_lle = OrderedDict()
+# X_test_dict_lle = OrderedDict()
+# X_train_dict_mlle = OrderedDict()
+# X_test_dict_mlle = OrderedDict()
+# labels_dr_lle = []
+# labels_dr_mlle = []
+# for i in range(len(nb)):
+#     labels_dr_lle.append('LLE:' + str(nb[i]))
+#     labels_dr_mlle.append('MLLE:' + str(nb[i]))
+# LLE = partial(manifold.LocallyLinearEmbedding,
+#               eigen_solver='dense',
+#               neighbors_algorithm='auto',
+#               n_neighbors=13,
+#               random_state=617)
+# for i in range(len(nb)):
+#     methods[labels_dr_lle[i]] = LLE(n_neighbors=nb[i], method="standard")
+#     start_time = time.time()
+#     X_train_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].fit_transform(X_train_smp)
+#     X_test_dict_lle[labels_dr_lle[i]] = methods[labels_dr_lle[i]].transform(X_test)
+#     elapsed_time = time.time() - start_time
+#     elapsed_dr_lle[labels_dr_lle[i]] = elapsed_time
+#     print(labels_dr_lle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+# for i in range(len(nb)):
+#     methods[labels_dr_mlle[i]] = LLE(n_neighbors=nb[i], method="modified")
+#     start_time = time.time()
+#     X_train_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].fit_transform(X_train_smp)
+#     X_test_dict_mlle[labels_dr_mlle[i]] = methods[labels_dr_mlle[i]].transform(X_test)
+#     elapsed_time = time.time() - start_time
+#     elapsed_dr_mlle[labels_dr_mlle[i]] = elapsed_time
+#     print(labels_dr_mlle[i] + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+#
+# # --- classification --- #
+# # # classifier = SVC(C=1.0, kernel='rbf', gamma='scale', probability=False, class_weight='balanced')
+# # # classifier = GaussianProcessClassifier()
+# # # classifier = GaussianNB()
+# classifier = LogisticRegression(penalty='l2', dual=False, C=1.0, fit_intercept=True, random_state=617, max_iter=2000)
+# # classifier = LinearSVC(C=1.0, random_state=617)
+# # # raw
+# start_time = time.time()
+# classifier.fit(X_train_smp, y_train_smp)
+# predictions = classifier.predict(X_test)
+# elapsed_time_raw = time.time() - start_time
+# states_raw = 'RAW:' + f'{elapsed_time_raw:.2f}'
+# f1_scores_raw = metrics.f1_score(y_test, predictions, average='weighted')
+# accuracy_scores_raw = metrics.accuracy_score(y_test, predictions)
+# cfm_raw = metrics.confusion_matrix(y_test, predictions, normalize='true')
+# print('RAW finished in ' + f'{elapsed_time_raw:.2f}' + ' s!')
+# # # kpca
+# start_time = time.time()
+# classifier.fit(X_train_kpca, y_train_smp)
+# predictions = classifier.predict(X_test_kpca)
+# elapsed_time_kpca = time.time() - start_time
+# states_kpca = 'KPCA:' + str(nb_components_kpca) + ':' + f'{elapsed_time_kpca:.2f}'
+# f1_scores_kpca = metrics.f1_score(y_test, predictions, average='weighted')
+# accuracy_scores_kpca = metrics.accuracy_score(y_test, predictions)
+# cfm_kpca = metrics.confusion_matrix(y_test, predictions, normalize='true')
+# print('KPCA:' + str(nb_components_kpca) + ' finished in ' + f'{elapsed_time_kpca:.2f}' + ' s!')
+# # # lle
+# elapsed_tot_lle = []; f1_scores_lle = []; accuracy_scores_lle = []; cfm_lle = []; states_lle = []
+# for label in labels_dr_lle:
+#     start_time = time.time()
+#     classifier.fit(X_train_dict_lle[label], y_train_smp)
+#     predictions = classifier.predict(X_test_dict_lle[label])
+#     elapsed_time = time.time() - start_time
+#     elapsed_tot_lle.append(elapsed_time+elapsed_dr_lle[label])
+#     states_lle.append(label + ':' + f'{elapsed_tot_lle[-1]:.2f}')
+#     f1_scores_lle.append(metrics.f1_score(y_test, predictions, average='weighted'))
+#     accuracy_scores_lle.append(metrics.accuracy_score(y_test, predictions))
+#     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
+#     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+# # # mlle
+# elapsed_tot_mlle = []; f1_scores_mlle = []; accuracy_scores_mlle = []; cfm_mlle = []; states_mlle = []
+# for label in labels_dr_mlle:
+#     start_time = time.time()
+#     classifier.fit(X_train_dict_mlle[label], y_train_smp)
+#     predictions = classifier.predict(X_test_dict_mlle[label])
+#     elapsed_time = time.time() - start_time
+#     elapsed_tot_mlle.append(elapsed_time+elapsed_dr_mlle[label])
+#     states_mlle.append(label + ':' + f'{elapsed_tot_mlle[-1]:.2f}')
+#     f1_scores_mlle.append(metrics.f1_score(y_test, predictions, average='weighted'))
+#     accuracy_scores_mlle.append(metrics.accuracy_score(y_test, predictions))
+#     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
+#     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
+# # # plots
+# x_lle = list(range(len(labels_dr_lle)))
+# y_lle = f1_scores_lle
+# z_lle = accuracy_scores_lle
+# x_mlle = list(range(len(labels_dr_mlle)))
+# y_mlle = f1_scores_mlle
+# z_mlle = accuracy_scores_mlle
+# fig, ax = plt.subplots(2, 1, figsize=(60, 30))
+# ax[0].plot(x_lle, y_lle, 'o-')
+# ax[0].plot(x_mlle, y_mlle, 'x-')
+# ax[0].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
+# ax[0].axhline(y=f1_scores_kpca, color='k', linestyle='-', linewidth=2)
+# ax[0].set_xticks(x_lle)
+# ax[0].set_xticklabels(states_lle, rotation=45, fontsize=20)
+# ax[0].grid()
+# ax[0].legend(['lle', 'mlle', 'raw', 'kpca'], fontsize=20)
+# ax[0].set_title('F1-score', fontsize=30)
+# ax[0].tick_params(axis='y', which='major', labelsize=20)
+# ax[1].plot(x_lle, z_lle, 'o-')
+# ax[1].plot(x_mlle, z_mlle, 'x-')
+# ax[1].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
+# ax[1].axhline(y=accuracy_scores_kpca, color='k', linestyle='-', linewidth=2)
+# ax[1].set_xticks(x_mlle)
+# ax[1].set_xticklabels(states_mlle, rotation=45, fontsize=20)
+# ax[1].grid()
+# ax[1].legend(['lle', 'mlle', 'raw', 'kpca'], fontsize=20)
+# ax[1].set_title('Accuracy', fontsize=30)
+# ax[1].tick_params(axis='y', which='major', labelsize=20)
+# fig.savefig('./plots/f1_acc.png')
+# counter = 0
+# fig, ax = plt.subplots(3, len(nb), figsize=(120, 30))
+# sns.heatmap(cfm_raw, annot=True, ax=ax[0, 0])
+# ax[0, 0].set_title(states_raw, fontsize=20)
+# sns.heatmap(cfm_kpca, annot=True, ax=ax[0, 1])
+# ax[0, 1].set_title(states_kpca, fontsize=20)
+# for i in range(len(nb)):
+#     sns.heatmap(cfm_lle[i], annot=True, ax=ax[1, i])
+#     ax[1, i].set_title(states_lle[i], fontsize=20)
+# for i in range(len(nb)):
+#     sns.heatmap(cfm_mlle[i], annot=True, ax=ax[2, i])
+#     ax[2, i].set_title(states_mlle[i], fontsize=20)
+# fig.savefig('./plots/cfm.png')
+#

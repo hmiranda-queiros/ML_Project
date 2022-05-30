@@ -1,6 +1,7 @@
 # --- modules --- #
 import time
 import matplotlib.pyplot as plt
+from matplotlib import rc
 from collections import OrderedDict
 from functools import partial
 import pandas as pd
@@ -121,7 +122,6 @@ for method in methods:
         classifier = SVC(C=1.0, kernel='rbf', gamma=8859, coef0=0)
     else:
         classifier = SVC(C=1.0, kernel='rbf', gamma=695, coef0=0)
-
     start_time = time.time()
     classifier.fit(X_train_dict[method], y_train)
     predictions = classifier.predict(X_test_dict[method])
@@ -138,12 +138,35 @@ result_df = pd.DataFrame(data=result)
 result_df.to_csv('./data/results.csv')
 ax = result_df.plot(x="states", y=["f1_scores", "accuracy_scores"], kind='bar', figsize=(30, 20))
 plt.savefig('./plots/accur_f1.png')
-fig, ax = plt.subplots(3, 1, figsize=(40, 40))
-counter = 0
-for i in range(len(methods)):
-    sns.heatmap(cfms[counter], annot=True, ax=ax[i])
-    ax[i].set_title(states[counter], fontsize=20)
-    counter = counter + 1
-fig.savefig('./plots/all_02.png')
+
+# --- confusion matrices ---#
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+rc('text', usetex=True)
+sns.set(font_scale=1.5, rc={'text.usetex': True})
+# raw
+fig, ax = plt.subplots()
+sns.heatmap(cfms[0], annot=True, ax=ax, annot_kws={"fontsize": 20})
+ax.figure.axes[-1].yaxis.label.set_size(30)
+cbar = ax.collections[0].colorbar
+cbar.ax.tick_params(labelsize=15)
+fig.tight_layout()
+fig.savefig('./plots/cfm_raw.svg')
+# lle
+fig, ax = plt.subplots()
+sns.heatmap(cfms[1], annot=True, ax=ax, annot_kws={"fontsize": 20})
+ax.figure.axes[-1].yaxis.label.set_size(30)
+cbar = ax.collections[0].colorbar
+cbar.ax.tick_params(labelsize=15)
+fig.tight_layout()
+fig.savefig('./plots/cfm_lle.svg')
+# mlle
+fig, ax = plt.subplots()
+sns.heatmap(cfms[2], annot=True, ax=ax, annot_kws={"fontsize": 20})
+ax.figure.axes[-1].yaxis.label.set_size(30)
+cbar = ax.collections[0].colorbar
+cbar.ax.tick_params(labelsize=15)
+fig.tight_layout()
+fig.savefig('./plots/cfm_mlle.svg')
+
 print(accuracy_scores)
 print(f1_scores)
