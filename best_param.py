@@ -18,6 +18,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
 
+
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
 
@@ -51,7 +52,6 @@ print(
 # --- sampling --- #
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
-# data_survived = data_survived.sample(nb_died_org, random_state=617)
 nb_sample = nb_died_org
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
@@ -67,6 +67,7 @@ print(f'Sampled: #patients = {nb_patients_sp}, #survived = {nb_survived_sp}, #di
 y = data_sp['hospital_death']
 X = data_sp.drop(['hospital_death'], axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.01, stratify=y, random_state=617)
+
 # # normalizing train and test
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
@@ -88,7 +89,6 @@ X_test_dict = OrderedDict()
 X_test_dict['RAW'] = X_test
 elapsed_dict = OrderedDict()
 elapsed_dict['RAW'] = 0
-
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
@@ -115,7 +115,6 @@ elapsed_clf = []
 f1_scores = []
 accuracy_scores = []
 cfms = []
-
 for method in methods:
     if method == "RAW":
         classifier = SVC(C=1.0, kernel='rbf', gamma=0.00009, coef0=0)
@@ -142,9 +141,6 @@ ax = result_df.plot(x="states", y=["f1_scores", "accuracy_scores"], kind='bar', 
 plt.savefig('./plots/accur_f1.png')
 
 # --- confusion matrices ---#
-rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-rc('text', usetex=True)
-sns.set(font_scale=1.5, rc={'text.usetex': True})
 # raw
 fig, ax = plt.subplots()
 sns.heatmap(cfms[0], annot=True, ax=ax, annot_kws={"fontsize": 20})
@@ -169,9 +165,15 @@ cbar = ax.collections[0].colorbar
 cbar.ax.tick_params(labelsize=15)
 fig.tight_layout()
 fig.savefig('./plots/cfm_mlle.svg')
+print("states")
 print(states)
+print("elapsed time for dimensionality reduction")
 print(elapsed_dict)
+print("elapsed time for classification")
 print(elapsed_clf)
+print("elapsed time (total)")
 print(elapsed)
+print("accuracy scores")
 print(accuracy_scores)
+print("f1 scores")
 print(f1_scores)

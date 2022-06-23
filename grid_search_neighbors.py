@@ -16,9 +16,9 @@ from sklearn import manifold
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
-
 import csv
 from itertools import zip_longest
+
 
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
@@ -53,7 +53,6 @@ print(
 # --- sampling --- #
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
-# data_survived = data_survived.sample(nb_died_org, random_state=617)
 nb_sample = nb_died_org
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
@@ -69,6 +68,7 @@ print(f'Sampled: #patients = {nb_patients_sp}, #survived = {nb_survived_sp}, #di
 y = data_sp['hospital_death']
 X = data_sp.drop(['hospital_death'], axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.01, stratify=y, random_state=617)
+
 # # normalizing train and test
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
@@ -84,7 +84,6 @@ print(
 # --- dimensionality reduction --- #
 nb_lle = np.arange(8, 23, 1)
 nb_mlle = np.arange(19, 34, 1)
-
 methods = OrderedDict()
 elapsed_dr_lle = OrderedDict()
 elapsed_dr_mlle = OrderedDict()
@@ -121,7 +120,6 @@ for i in range(len(nb_mlle)):
 
 # --- classification --- #
 classifier = SVC(C=1.0, kernel='rbf', gamma='scale', coef0=0)
-
 # # raw
 start_time = time.time()
 classifier.fit(X_train, y_train)
@@ -171,14 +169,13 @@ for label in labels_dr_mlle:
     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print(label + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
-# # plots
+# --- plots --- #
 x_lle = list(range(len(labels_dr_lle)))
 y_lle = f1_scores_lle
 z_lle = accuracy_scores_lle
 x_mlle = list(range(len(labels_dr_mlle)))
 y_mlle = f1_scores_mlle
 z_mlle = accuracy_scores_mlle
-
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, y_lle, 'o-')
 ax[0].axhline(y=f1_scores_raw, color='r', linestyle='-', linewidth=2)
@@ -197,7 +194,6 @@ ax[1].legend(['mlle', 'raw'], fontsize=20)
 ax[1].set_title('F1-score MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
 fig.savefig(f'./plots/f1_{nb_sample * 2}_samples.png')
-
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, z_lle, 'o-')
 ax[0].axhline(y=accuracy_scores_raw, color='r', linestyle='-', linewidth=2)
@@ -216,7 +212,6 @@ ax[1].legend(['mlle', 'raw'], fontsize=20)
 ax[1].set_title('Accur MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
 fig.savefig(f'./plots/accur_{nb_sample * 2}_samples.png')
-
 fig, ax = plt.subplots(3, max(len(nb_lle), len(nb_mlle)), figsize=(120, 30))
 sns.heatmap(cfm_raw, annot=True, ax=ax[0, 0])
 ax[0, 0].set_title(states_raw, fontsize=20)
@@ -228,13 +223,12 @@ for i in range(len(nb_mlle)):
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
 
-# # csv
+# --- csv files --- #
 nb_neigh_lle = nb_lle.tolist()
 nb_neigh_mlle = nb_mlle.tolist()
 f1_scores_raw = [f1_scores_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
 accuracy_scores_raw = [accuracy_scores_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
 elapsed_times_raw = [elapsed_time_raw for i in range(max(len(nb_neigh_lle), len(nb_neigh_mlle)))]
-
 data = [nb_neigh_lle, f1_scores_lle, accuracy_scores_lle, list(elapsed_dr_lle.values()), elapsed_clf_lle, elapsed_tot_lle,
         nb_neigh_mlle, f1_scores_mlle, accuracy_scores_mlle, list(elapsed_dr_mlle.values()), elapsed_clf_mlle, elapsed_tot_mlle,
         f1_scores_raw, accuracy_scores_raw, elapsed_times_raw]

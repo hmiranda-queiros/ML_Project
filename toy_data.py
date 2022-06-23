@@ -2,8 +2,6 @@ from sklearn import manifold, datasets
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from matplotlib import ticker
-rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-rc('text', usetex=True)
 
 
 def plot_3d(points, points_color, title):
@@ -17,10 +15,7 @@ def plot_3d(points, points_color, title):
     ax.set_zticks([], minor=True)
     col = ax.scatter(x, y, z, c=points_color, s=50, alpha=0.8)
     ax.view_init(azim=-60, elev=9)
-    # fig.subplots_adjust(top=0.2, bottom=0, left=0, right=1)
     fig.savefig("./plots/swiss_roll_3d.svg", bbox_inches='tight', pad_inches=0)
-
-
 
 
 def add_2d_scatter(ax, points, points_color, title=None):
@@ -34,8 +29,8 @@ def add_2d_scatter(ax, points, points_color, title=None):
 
 sh_points, sh_color = datasets.make_swiss_roll(n_samples=1500, random_state=617)
 plot_3d(sh_points, sh_color, "Original Swiss Hole")
-n_neighbors = 12  # neighborhood which is used to recover the locally linear structure
-n_components = 2  # number of coordinates for the manifold
+n_neighbors = 12
+n_components = 2
 params = {"n_neighbors": n_neighbors,
           "n_components": n_components,
           "eigen_solver": "auto",

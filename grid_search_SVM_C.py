@@ -16,9 +16,9 @@ from sklearn import manifold
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.mixture import GaussianMixture
-
 import csv
 from itertools import zip_longest
+
 
 # --- preprocessing --- #
 data = pd.read_csv("./data/data.csv")
@@ -53,7 +53,6 @@ print(
 # --- sampling --- #
 data_died = data[data['hospital_death'] == 1]
 data_survived = data[data['hospital_death'] == 0]
-# data_survived = data_survived.sample(nb_died_org, random_state=617)
 nb_sample = nb_died_org
 data_died = data_died.sample(nb_sample, random_state=617)
 data_survived = data_survived.sample(nb_sample, random_state=617)
@@ -69,6 +68,7 @@ print(f'Sampled: #patients = {nb_patients_sp}, #survived = {nb_survived_sp}, #di
 y = data_sp['hospital_death']
 X = data_sp.drop(['hospital_death'], axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.01, stratify=y, random_state=617)
+
 # # normalizing train and test
 sc = StandardScaler()
 X_train = sc.fit_transform(X_train)
@@ -90,7 +90,6 @@ X_test_dict = OrderedDict()
 X_test_dict['RAW'] = X_test
 elapsed_dict = OrderedDict()
 elapsed_dict['RAW'] = 0
-
 LLE = partial(manifold.LocallyLinearEmbedding,
               eigen_solver='auto',
               neighbors_algorithm='auto',
@@ -114,11 +113,9 @@ print('MLLE' + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 # nb_raw = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
 # nb_lle = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
 # nb_mlle = np.array([0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000])
-
 nb_raw = np.logspace(-1, 1, 20, endpoint=True)
 nb_lle = np.logspace(-1, 1, 20, endpoint=True)
 nb_mlle = np.logspace(-1, 1, 20, endpoint=True)
-
 # # raw
 elapsed_tot_raw = []
 f1_scores_raw = []
@@ -137,7 +134,6 @@ for i in nb_raw:
     accuracy_scores_raw.append(metrics.accuracy_score(y_test, predictions))
     cfm_raw.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print("RAW:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-
 # # lle
 elapsed_clf_lle = []
 elapsed_tot_lle = []
@@ -158,7 +154,6 @@ for i in nb_lle:
     accuracy_scores_lle.append(metrics.accuracy_score(y_test, predictions))
     cfm_lle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print("LLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
-
 # # mlle
 elapsed_clf_mlle = []
 elapsed_tot_mlle = []
@@ -180,7 +175,7 @@ for i in nb_mlle:
     cfm_mlle.append(metrics.confusion_matrix(y_test, predictions, normalize='true'))
     print("MLLE:C:" + str(i) + ' finished in ' + f'{elapsed_time:.2f}' + ' s!')
 
-# # plots
+# --- plots --- #
 x_lle = list(range(len(states_lle)))
 y_lle = f1_scores_lle
 z_lle = accuracy_scores_lle
@@ -190,7 +185,6 @@ z_mlle = accuracy_scores_mlle
 x_raw = list(range(len(states_raw)))
 y_raw = f1_scores_raw
 z_raw = accuracy_scores_raw
-
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, y_lle, 'o-')
 ax[0].plot(x_raw, y_raw, 'x-', color='r')
@@ -209,7 +203,6 @@ ax[1].legend(['mlle', 'raw'], fontsize=20)
 ax[1].set_title('F1-score MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
 fig.savefig(f'./plots/f1_{nb_sample * 2}_samples.png')
-
 fig, ax = plt.subplots(2, 1, figsize=(60, 30))
 ax[0].plot(x_lle, z_lle, 'o-')
 ax[0].plot(x_raw, z_raw, 'x-', color='r')
@@ -228,7 +221,6 @@ ax[1].legend(['mlle', 'raw'], fontsize=20)
 ax[1].set_title('Accur MLLE', fontsize=30)
 ax[1].tick_params(axis='y', which='major', labelsize=20)
 fig.savefig(f'./plots/accur_{nb_sample * 2}_samples.png')
-
 fig, ax = plt.subplots(3, max(len(nb_lle), len(nb_mlle), len(nb_raw)), figsize=(120, 30))
 for i in range(len(nb_raw)):
     sns.heatmap(cfm_raw[i], annot=True, ax=ax[0, i])
@@ -241,11 +233,10 @@ for i in range(len(nb_mlle)):
     ax[2, i].set_title(states_mlle[i], fontsize=20)
 fig.savefig(f'./plots/cfm_{nb_sample * 2}_samples.png.png')
 
-# # csv
+# --- csv files --- #
 nb_C_lle = nb_lle.tolist()
 nb_C_mlle = nb_mlle.tolist()
 nb_C_raw = nb_raw.tolist()
-
 data = [nb_C_lle, f1_scores_lle, accuracy_scores_lle, elapsed_clf_lle, elapsed_tot_lle,
         nb_C_mlle, f1_scores_mlle, accuracy_scores_mlle, elapsed_clf_mlle, elapsed_tot_mlle,
         nb_C_raw, f1_scores_raw, accuracy_scores_raw, elapsed_tot_raw]
